@@ -1,7 +1,7 @@
 /// Use axum capabilities.
 use axum::routing::*;
 
-use crate::wubi::{AppState, create_lesson, get_lesson, get_lessons, health, post_progress};
+use crate::wubi::{AppState, create_lesson, get_lesson, get_lessons, health, post_progress, get_articles, get_article, create_article, get_wubi_roots, get_wubi_root, create_wubi_root, search_wubi_root};
 
 /// Use HashMap to deserialize a HTTP GET query into a key-value map.
 /// axum extracts query parameters by using `axum::extract::Query`.
@@ -48,6 +48,11 @@ pub fn app(state: AppState) -> axum::Router {
         .route("/api/lessons", get(get_lessons).post(create_lesson))
         .route("/api/lessons/{id}", get(get_lesson))
         .route("/api/progress", post(post_progress))
+        .route("/api/articles", get(get_articles).post(create_article))
+        .route("/api/articles/{id}", get(get_article))
+        .route("/api/wubi-roots", get(get_wubi_roots).post(create_wubi_root))
+        .route("/api/wubi-roots/{id}", get(get_wubi_root))
+        .route("/api/search-wubi-root/{character}", get(search_wubi_root))
         .with_state(state)
 }
 

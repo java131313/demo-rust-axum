@@ -1,41 +1,40 @@
 import { useEffect, useState } from 'react';
-import { Lesson, ProgressUpdate, NewLesson, Article, NewArticle, WubiRoot, NewWubiRoot } from './types';
 
 function App() {
-  const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [wubiRoots, setWubiRoots] = useState<WubiRoot[]>([]);
+  const [lessons, setLessons] = useState([]);
+  const [articles, setArticles] = useState([]);
+  const [wubiRoots, setWubiRoots] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'lessons' | 'practice' | 'roots' | 'progress'>('lessons');
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('lessons');
   const [userName, setUserName] = useState('student');
-  const [selectedLessonId, setSelectedLessonId] = useState<number>(1);
+  const [selectedLessonId, setSelectedLessonId] = useState(1);
   const [accuracy, setAccuracy] = useState('95');
   const [score, setScore] = useState('80');
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [newLesson, setNewLesson] = useState<NewLesson>({
+  const [statusMessage, setStatusMessage] = useState(null);
+  const [newLesson, setNewLesson] = useState({
     character: '',
     code: '',
     description: '',
   });
-  const [newArticle, setNewArticle] = useState<NewArticle>({
+  const [newArticle, setNewArticle] = useState({
     title: '',
     content: '',
     difficulty: 'medium',
   });
-  const [newWubiRoot, setNewWubiRoot] = useState<NewWubiRoot>({
+  const [newWubiRoot, setNewWubiRoot] = useState({
     character: '',
     code: '',
     position: '',
     description: '',
   });
-  const [selectedArticleId, setSelectedArticleId] = useState<number>(0);
-  const [currentArticle, setCurrentArticle] = useState<Article | null>(null);
+  const [selectedArticleId, setSelectedArticleId] = useState(0);
+  const [currentArticle, setCurrentArticle] = useState(null);
   const [userInput, setUserInput] = useState('');
-  const [startTime, setStartTime] = useState<number | null>(null);
+  const [startTime, setStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [searchCharacter, setSearchCharacter] = useState('');
-  const [searchResult, setSearchResult] = useState<WubiRoot | null>(null);
+  const [searchResult, setSearchResult] = useState(null);
 
   // Load data on component mount
   useEffect(() => {
@@ -62,7 +61,7 @@ function App() {
 
   // Timer effect for typing practice
   useEffect(() => {
-    let interval: number | null = null;
+    let interval = null;
     
     if (startTime !== null) {
       interval = window.setInterval(() => {
@@ -77,7 +76,7 @@ function App() {
 
   const submitProgress = async () => {
     setStatusMessage(null);
-    const payload: ProgressUpdate = {
+    const payload = {
       user_name: userName,
       lesson_id: selectedLessonId,
       accuracy: Number(accuracy),
@@ -166,7 +165,7 @@ function App() {
     setStatusMessage('新增字根成功。');
   };
 
-  const handleArticleChange = (id: number) => {
+  const handleArticleChange = (id) => {
     setSelectedArticleId(id);
     const article = articles.find(a => a.id === id) || null;
     setCurrentArticle(article);
@@ -227,7 +226,7 @@ function App() {
     }
   };
 
-  const formatTime = (ms: number) => {
+  const formatTime = (ms) => {
     const seconds = Math.floor(ms / 1000);
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
