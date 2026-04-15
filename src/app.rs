@@ -1,6 +1,8 @@
 /// Use axum capabilities.
 use axum::routing::*;
 
+use crate::wubi::{AppState, create_lesson, get_lesson, get_lessons, health, post_progress};
+
 /// Use HashMap to deserialize a HTTP GET query into a key-value map.
 /// axum extracts query parameters by using `axum::extract::Query`.
 /// For the implementation, see function `get_query`.
@@ -12,7 +14,7 @@ use std::collections::HashMap;
 use serde_json::{json, Value};
 
 /// Create our application which is an axum router.
-pub fn app() -> axum::Router {
+pub fn app(state: AppState) -> axum::Router {
     axum::Router::new()
         .fallback(fallback)
         .route("/", get(hello))
@@ -42,6 +44,11 @@ pub fn app() -> axum::Router {
             "/books/{id}/form",
             get(get_books_id_form).post(post_books_id_form),
         )
+        .route("/api/health", get(health))
+        .route("/api/lessons", get(get_lessons).post(create_lesson))
+        .route("/api/lessons/{id}", get(get_lesson))
+        .route("/api/progress", post(post_progress))
+        .with_state(state)
 }
 
 ////
@@ -267,7 +274,10 @@ async fn print_data() {
     thread::spawn(move || {
         match DATA.lock() {
             Ok(data) => {
-        println!("data: {:?}", data);
+                println!("data: {:?}", data);
+            }
+            _ => {}
+        }
     })
     .join()
     .unwrap()
@@ -280,12 +290,15 @@ pub async fn get_books() -> axum::response::Html<String> {
     thread::spawn(move || {
         match DATA.lock() {
             Ok(data) => {
-        let mut books = data.values().collect::<Vec<_>>().clone();
-        books.sort_by(|a, b| a.title.cmp(&b.title));
-        books
-            .iter()
-            .map(|&book| format!("<p>{}</p>\n", &book))
-            .collect::<String>()
+                let mut books = data.values().collect::<Vec<_>>().clone();
+                books.sort_by(|a, b| a.title.cmp(&b.title));
+                books
+                    .iter()
+                    .map(|&book| format!("<p>{}</p>\n", &book))
+                    .collect::<String>()
+            }
+            _ => String::from("Error")
+        }
     })
     .join()
     .unwrap()
@@ -300,8 +313,11 @@ pub async fn put_books(
     thread::spawn(move || {
         match DATA.lock() {
             Ok(mut data) => {
-        data.insert(book.id, book.clone());
-        format!("Put book: {}", &book)
+                data.insert(book.id, book.clone());
+                format!("Put book: {}", &book)
+            }
+            _ => String::from("Error")
+        }
     })
     .join()
     .unwrap()
@@ -316,9 +332,12 @@ pub async fn get_books_id(
     thread::spawn(move || {
         match DATA.lock() {
             Ok(data) => {
-        match data.get(&id) {
-            Some(book) => format!("<p>{}</p>\n", &book),
-            None => format!("<p>Book id {} not found</p>", id),
+                match data.get(&id) {
+                    Some(book) => format!("<p>{}</p>\n", &book),
+                    None => format!("<p>Book id {} not found</p>", id),
+                }
+            }
+            _ => String::from("Error")
         }
     })
     .join()
@@ -334,11 +353,14 @@ pub async fn delete_books_id(
     thread::spawn(move || {
         match DATA.lock() {
             Ok(mut data) => {
-        if data.contains_key(&id) {
-            data.remove(&id);
-            format!("Delete book id: {}", &id)
-        } else {
-            format!("Book id not found: {}", &id)
+                if data.contains_key(&id) {
+                    data.remove(&id);
+                    format!("Delete book id: {}", &id)
+                } else {
+                    format!("Book id not found: {}", &id)
+                }
+            }
+            _ => String::from("Error")
         }
     })
     .join()
@@ -354,19 +376,22 @@ pub async fn get_books_id_form(
     thread::spawn(move || {
         match DATA.lock() {
             Ok(data) => {
-        match data.get(&id) {
-            Some(book) => format!(
-                concat!(
-                    "<form method=\"post\" action=\"/books/{}/form\">\n",
-                    "<input type=\"hidden\" name=\"id\" value=\"{}\">\n",
-                    "<p><input name=\"title\" value=\"{}\"></p>\n",
-                    "<p><input name=\"author\" value=\"{}\"></p>\n",
-                    "<input type=\"submit\" value=\"Save\">\n",
-                    "</form>\n"
-                ),
-                &book.id, &book.id, &book.title, &book.author
-            ),
-            None => format!("<p>Book id {} not found</p>", id),
+                match data.get(&id) {
+                    Some(book) => format!(
+                        concat!(
+                            "<form method=\"post\" action=\"/books/{}/form\">\n",
+                            "<input type=\"hidden\" name=\"id\" value=\"{}\">\n",
+                            "<p><input name=\"title\" value=\"{}\"></p>\n",
+                            "<p><input name=\"author\" value=\"{}\"></p>\n",
+                            "<input type=\"submit\" value=\"Save\">\n",
+                            "</form>\n"
+                        ),
+                        &book.id, &book.id, &book.title, &book.author
+                    ),
+                    None => format!("<p>Book id {} not found</p>", id),
+                }
+            }
+            _ => String::from("Error")
         }
     })
     .join()
@@ -381,11 +406,14 @@ pub async fn post_books_id_form(form: axum::extract::Form<Book>) -> axum::respon
     thread::spawn(move || {
         match DATA.lock() {
             Ok(mut data) => {
-        if data.contains_key(&new_book.id) {
-            data.insert(new_book.id, new_book.clone());
-            format!("Post book: {}", &new_book)
-        } else {
-            format!("Book id not found: {}", &new_book.id)
+                if data.contains_key(&new_book.id) {
+                    data.insert(new_book.id, new_book.clone());
+                    format!("Post book: {}", &new_book)
+                } else {
+                    format!("Book id not found: {}", &new_book.id)
+                }
+            }
+            _ => String::from("Error")
         }
     })
     .join()

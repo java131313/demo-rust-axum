@@ -21,6 +21,7 @@
 //! For more see the file `README.md` in the project root.
 
 pub mod app;
+pub mod wubi;
 
 /// See file book.rs, which defines the `Book` struct.
 mod book;
@@ -29,6 +30,7 @@ mod book;
 mod data;
 
 /// Use tracing crates for application-level tracing output.
+use sqlx::mysql::MySqlPool;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 /// The main function does these steps: 
@@ -53,8 +55,19 @@ async fn main() {
         None => "0.0.0.0:3000".into(),
     };
 
+    // Create our database connection pool and initialize the schema.
+    let database_url = crate::wubi::default_database_url();
+    let pool = MySqlPool::connect(&database_url)
+        .await
+        .expect("failed to connect to MySQL database");
+    crate::wubi::init_db(&pool)
+        .await
+        .expect("failed to initialize database schema");
+
+    let state = crate::wubi::AppState { pool };
+
     // Create our application which is an axum router.
-    let app = crate::app::app();
+    let app = crate::app::app(state);
 
     // Run our app using a hyper server.
     let listener = tokio::net::TcpListener::bind(bind_address).await.unwrap();
