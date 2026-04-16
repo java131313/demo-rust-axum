@@ -11,7 +11,7 @@ pub struct AppState {
 /// A Wubi tutorial lesson record.
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Lesson {
-    pub id: u32,
+    pub id: i32,  // Changed from u32 to i32 to match MySQL INT type
     pub character: String,
     pub code: String,
     pub description: String,
@@ -44,7 +44,7 @@ pub fn default_database_url() -> String {
 /// A Wubi practice article record.
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Article {
-    pub id: u32,
+    pub id: i32,  // Changed from u32 to i32 to match MySQL INT type
     pub title: String,
     pub content: String,
     pub difficulty: String, // easy, medium, hard
@@ -61,7 +61,7 @@ pub struct NewArticle {
 /// A Wubi root character record.
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct WubiRoot {
-    pub id: u32,
+    pub id: i32,  // Changed from u32 to i32 to match MySQL INT type
     pub character: String,
     pub code: String,
     pub position: String, // position in the keyboard
@@ -123,6 +123,20 @@ pub async fn init_db(pool: &MySqlPool) -> Result<(), sqlx::Error> {
     .execute(pool)
     .await?;
 
+    // Create wubi_characters table for all chinese characters and their wubi codes
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS wubi_characters (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            character_val VARCHAR(4) NOT NULL UNIQUE,
+            wubi_code VARCHAR(8) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        "#,
+    )
+    .execute(pool)
+    .await?;
+
     // Create wubi_roots table for wubi root characters
     sqlx::query(
         r#"
@@ -160,52 +174,161 @@ pub async fn init_db(pool: &MySqlPool) -> Result<(), sqlx::Error> {
     }
 
     // Insert sample articles if table is empty
-    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM articles").fetch_one(pool).await?;
-    if count == 0 {
-        let rows = [
-            ("练习文章一", "五笔字型是一种高效的中文输入法，通过拆分汉字为基本字根进行输入。", "easy"),
-            ("练习文章二", "学习五笔需要掌握字根分布和拆字规则，多加练习才能熟练运用。", "medium"),
-            ("练习文章三", "汉字的结构复杂多样，五笔输入法按照汉字的笔画和结构规律进行编码。", "hard"),
-        ];
+    let count_result: Result<i64, sqlx::Error> = sqlx::query_scalar("SELECT COUNT(*) FROM articles")
+        .fetch_one(pool)
+        .await
+        .map_err(|e| {
+            eprintln!("Error querying articles count: {:?}", e);
+            e
+        });
+    
+    if let Ok(count) = count_result {
+        if count == 0 {
+            let rows = [
+                ("练习文章一", "五笔字型是一种高效的中文输入法，通过拆分汉字为基本字根进行输入。", "easy"),
+                ("练习文章二", "学习五笔需要掌握字根分布和拆字规则，多加练习才能熟练运用。", "medium"),
+                ("练习文章三", "汉字的结构复杂多样，五笔输入法按照汉字的笔画和结构规律进行编码。", "hard"),
+            ];
 
-        for (title, content, difficulty) in rows {
-            sqlx::query(
-                "INSERT INTO articles (title, content, difficulty) VALUES (?, ?, ?)"
-            )
-            .bind(title)
-            .bind(content)
-            .bind(difficulty)
-            .execute(pool)
-            .await?;
+            for (title, content, difficulty) in rows {
+                if let Err(e) = sqlx::query(
+                    "INSERT INTO articles (title, content, difficulty) VALUES (?, ?, ?)"
+                )
+                .bind(title)
+                .bind(content)
+                .bind(difficulty)
+                .execute(pool)
+                .await {
+                    eprintln!("Error inserting article: {:?}", e);
+                }
+            }
         }
     }
 
     // Insert sample wubi roots if table is empty
-    let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM wubi_roots").fetch_one(pool).await?;
-    if count == 0 {
-        let rows = [
-            ("一", "GGLL", "G区第一键", "横区起首字根"),
-            ("丿", "TTLL", "T区第一键", "撇区起首字根"),
-            ("丨", "HHLL", "H区第一键", "竖区起首字根"),
-            ("丶", "YYLL", "Y区第一键", "捺区起首字根"),
-            ("乙", "NNLL", "N区第一键", "折区起首字根"),
-            ("九", "VTNG", "V区第二键", "字根：乙"),
-            ("力", "LTNN", "L键", "字根：力"),
-            ("乃", "DETN", "N键", "字根：乃"),
-            ("刀", "VNTE", "V键", "字根：刀"),
-            ("卜", "HHYD", "H键", "字根：卜"),
-        ];
+    let count_result: Result<i64, sqlx::Error> = sqlx::query_scalar("SELECT COUNT(*) FROM wubi_roots")
+        .fetch_one(pool)
+        .await
+        .map_err(|e| {
+            eprintln!("Error querying wubi_roots count: {:?}", e);
+            e
+        });
+    
+    if let Ok(count) = count_result {
+        if count == 0 {
+            let rows = [
+                ("一", "GGLL", "G区第一键", "横区起首字根"),
+                ("丿", "TTLL", "T区第一键", "撇区起首字根"),
+                ("丨", "HHLL", "H区第一键", "竖区起首字根"),
+                ("丶", "YYLL", "Y区第一键", "捺区起首字根"),
+                ("乙", "NNLL", "N区第一键", "折区起首字根"),
+                ("九", "VTNG", "V区第二键", "字根：乙"),
+                ("力", "LTNN", "L键", "字根：力"),
+                ("乃", "DETN", "N键", "字根：乃"),
+                ("刀", "VNTE", "V键", "字根：刀"),
+                ("卜", "HHYD", "H键", "字根：卜"),
+            ];
 
-        for (character, code, position, description) in rows {
-            sqlx::query(
-                "INSERT INTO wubi_roots (character_val, code, position, description) VALUES (?, ?, ?, ?)"
-            )
-            .bind(character)
-            .bind(code)
-            .bind(position)
-            .bind(description)
-            .execute(pool)
-            .await?;
+            for (character, code, position, description) in rows {
+                if let Err(e) = sqlx::query(
+                    "INSERT INTO wubi_roots (character_val, code, position, description) VALUES (?, ?, ?, ?)"
+                )
+                .bind(character)
+                .bind(code)
+                .bind(position)
+                .bind(description)
+                .execute(pool)
+                .await {
+                    eprintln!("Error inserting wubi root: {:?}", e);
+                }
+            }
+        }
+    }
+
+    // Insert sample wubi characters if table is empty
+    let count_result: Result<i64, sqlx::Error> = sqlx::query_scalar("SELECT COUNT(*) FROM wubi_characters")
+        .fetch_one(pool)
+        .await
+        .map_err(|e| {
+            eprintln!("Error querying wubi_characters count: {:?}", e);
+            e
+        });
+    
+    if let Ok(count) = count_result {
+        if count == 0 {
+            let rows = [
+                ("王", "gggg"),
+                ("李", "sbvb"),
+                ("张", "xtay"),
+                ("刘", "yjlv"),
+                ("陈", "bii"),
+                ("杨", "mnw"),
+                ("赵", "fhq"),
+                ("黄", "amw"),
+                ("周", "mfkf"),
+                ("吴", "kgdu"),
+                ("你", "wqiy"),
+                ("好", "qynu"),
+                ("我", "trnt"),
+                ("们", "wwxn"),
+                ("学", "ipbf"),
+                ("习", "nyud"),
+                ("五", "gqvg"),
+                ("笔", "thtc"),
+                ("的", "rqyy"),
+                ("一", "ggl"),
+                ("是", "jgh"),
+                ("在", "fhg"),
+                ("人", "wwgg"),
+                ("有", "def"),
+                ("中", "khk"),
+                ("大", "dddd"),
+                ("为", "ylge"),
+                ("上", "hhll"),
+                ("个", "whjh"),
+                ("国", "lgyi"),
+                ("家", "pgte"),
+                ("经", "xcta"),
+                ("可", "skd"),
+                ("以", "nywy"),
+                ("年", "rhfk"),
+                ("月", "eeg"),
+                ("日", "jjjj"),
+                ("时", "jfy"),
+                ("会", "wfo"),
+                ("生", "tgj"),
+                ("工", "aaaa"),
+                ("都", "ftjb"),
+                ("下", "ghhg"),
+                ("要", "svf"),
+                ("说", "yukq"),
+                ("就", "uqiy"),
+                ("出", "bmkg"),
+                ("作", "wtfg"),
+                ("地", "fny"),
+                ("方", "yygy"),
+                ("成", "dnnt"),
+                ("市", "ymhj"),
+                ("民", "nav"),
+                ("十", "fgh"),
+                ("公", "awu"),
+                ("司", "ngkd"),
+                ("电", "jnwy"),
+                ("话", "xyyy"),
+                ("号", "kgkg"),
+            ];
+
+            for (character, code) in rows {
+                if let Err(e) = sqlx::query(
+                    "INSERT INTO wubi_characters (character_val, wubi_code) VALUES (?, ?)"
+                )
+                .bind(character)
+                .bind(code)
+                .execute(pool)
+                .await {
+                    eprintln!("Error inserting wubi character: {:?}", e);
+                }
+            }
         }
     }
 
@@ -220,7 +343,7 @@ pub async fn health() -> Json<serde_json::Value> {
 /// GET /api/lessons
 pub async fn get_lessons(State(state): State<AppState>) -> Result<Json<Vec<Lesson>>, StatusCode> {
     let lessons = sqlx::query_as::<_, Lesson>(
-        "SELECT id, character_val AS character, code, description FROM lessons ORDER BY id",
+        "SELECT id, character_val AS `character`, code, description FROM lessons ORDER BY id",
     )
     .fetch_all(&state.pool)
     .await
@@ -235,7 +358,7 @@ pub async fn get_lesson(
     State(state): State<AppState>,
 ) -> Result<Json<Lesson>, StatusCode> {
     let lesson = sqlx::query_as::<_, Lesson>(
-        "SELECT id, character_val AS character, code, description FROM lessons WHERE id = ?",
+        "SELECT id, character_val AS `character`, code, description FROM lessons WHERE id = ?",
     )
     .bind(id)
     .fetch_one(&state.pool)
@@ -265,7 +388,7 @@ pub async fn create_lesson(
 
     let id = result.last_insert_id();
     let lesson = sqlx::query_as::<_, Lesson>(
-        "SELECT id, character_val AS character, code, description FROM lessons WHERE id = ?",
+        "SELECT id, character_val AS `character`, code, description FROM lessons WHERE id = ?",
     )
     .bind(id as u32)
     .fetch_one(&state.pool)
@@ -354,14 +477,18 @@ pub async fn create_article(
 
 /// GET /api/wubi-roots
 pub async fn get_wubi_roots(State(state): State<AppState>) -> Result<Json<Vec<WubiRoot>>, StatusCode> {
-    let roots = sqlx::query_as::<_, WubiRoot>(
-        "SELECT id, character_val AS character, code, position, description FROM wubi_roots ORDER BY position",
+    match sqlx::query_as::<_, WubiRoot>(
+        "SELECT id, character_val AS `character`, code, position, description FROM wubi_roots ORDER BY position",
     )
     .fetch_all(&state.pool)
     .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    Ok(Json(roots))
+    {
+        Ok(roots) => Ok(Json(roots)),
+        Err(e) => {
+            eprintln!("Error fetching wubi roots: {:?}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
 }
 
 /// GET /api/wubi-roots/{id}
@@ -370,7 +497,7 @@ pub async fn get_wubi_root(
     State(state): State<AppState>,
 ) -> Result<Json<WubiRoot>, StatusCode> {
     let root = sqlx::query_as::<_, WubiRoot>(
-        "SELECT id, character_val AS character, code, position, description FROM wubi_roots WHERE id = ?",
+        "SELECT id, character_val AS `character`, code, position, description FROM wubi_roots WHERE id = ?",
     )
     .bind(id)
     .fetch_one(&state.pool)
@@ -401,7 +528,7 @@ pub async fn create_wubi_root(
 
     let id = result.last_insert_id();
     let root = sqlx::query_as::<_, WubiRoot>(
-        "SELECT id, character_val AS character, code, position, description FROM wubi_roots WHERE id = ?",
+        "SELECT id, character_val AS `character`, code, position, description FROM wubi_roots WHERE id = ?",
     )
     .bind(id as u32)
     .fetch_one(&state.pool)
@@ -417,7 +544,7 @@ pub async fn search_wubi_root(
     State(state): State<AppState>,
 ) -> Result<Json<Option<WubiRoot>>, StatusCode> {
     let root = sqlx::query_as::<_, WubiRoot>(
-        "SELECT id, character_val AS character, code, position, description FROM wubi_roots WHERE character_val = ?",
+        "SELECT id, character_val AS `character`, code, position, description FROM wubi_roots WHERE character_val = ?",
     )
     .bind(character)
     .fetch_optional(&state.pool)
@@ -425,4 +552,33 @@ pub async fn search_wubi_root(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(root))
+}
+
+#[derive(sqlx::FromRow, Serialize, Deserialize)]
+pub struct WubiCharacter {
+    pub character: String,
+    pub wubi_code: String,
+}
+
+pub async fn get_wubi_code(
+    Path(character): Path<String>,
+    State(state): State<AppState>,
+) -> Result<Json<WubiCharacter>, StatusCode> {
+    if character.chars().count() != 1 {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    // 从数据库查询五笔码
+    let result = sqlx::query_as::<_, WubiCharacter>(
+        "SELECT character_val AS character, wubi_code FROM wubi_characters WHERE character_val = ?"
+    )
+    .bind(&character)
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|err| match err {
+        sqlx::Error::RowNotFound => StatusCode::NOT_FOUND,
+        _ => StatusCode::INTERNAL_SERVER_ERROR,
+    })?;
+
+    Ok(Json(result))
 }
