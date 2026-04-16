@@ -9,10 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.2.47",
-    "ant-design-vue": "^3.2.15",
     "@antv/g6": "^4.8.25",
-    "axios": "^1.6.8"
+    "@esbuild/darwin-arm64": "^0.28.0",
+    "ant-design-vue": "^3.2.15",
+    "axios": "^1.6.8",
+    "vue": "^3.2.47"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
