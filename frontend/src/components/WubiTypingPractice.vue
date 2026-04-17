@@ -41,16 +41,45 @@
       <!-- 原文显示 -->
       <div class="original-text" v-if="currentArticle">
         <div class="text-content">
-          <span 
-            v-for="(char, index) in currentArticle.content.split('')" 
+          <span
+            v-for="(char, index) in currentArticle.content.split('')"
             :key="index"
             :class="getCharClass(index)"
+            @click="handleCharClick(index)"
+            :title="`点击查看${char}的五笔编码`"
+            style="cursor: pointer;"
           >
             {{ char }}
           </span>
         </div>
       </div>
       
+      <!-- 五笔编码提示 -->
+      <div class="wubi-hint-section" v-if="currentCharacter || wubiCodeError || isLoadingWubiCode">
+        <a-alert
+          v-if="currentWubiCode"
+          :message="`当前字符: ${currentCharacter}`"
+          :description="`五笔编码: ${currentWubiCode.wubi_code}`"
+          type="info"
+          show-icon
+          style="margin-bottom: 16px;"
+        />
+        <a-alert
+          v-else-if="isLoadingWubiCode"
+          message="正在查询五笔编码..."
+          type="info"
+          show-icon
+          style="margin-bottom: 16px;"
+        />
+        <a-alert
+          v-else-if="wubiCodeError"
+          :message="wubiCodeError"
+          type="warning"
+          show-icon
+          style="margin-bottom: 16px;"
+        />
+      </div>
+
       <!-- 输入区域 -->
       <div class="input-section">
         <a-textarea
@@ -58,6 +87,7 @@
           placeholder="请在此输入文字进行练习..."
           :auto-size="{ minRows: 4, maxRows: 6 }"
           @focus="startTypingPractice"
+          @input="handleUserInput"
           style="margin-top: 16px;"
         />
       </div>
@@ -115,7 +145,12 @@ export default {
       timer: null,
       searchCharacter: '',
       searchResult: null,
-      wubiRoots: [] // 添加wubiRoots数据
+      wubiRoots: [], // 添加wubiRoots数据
+      currentCharIndex: 0, // 当前光标位置
+      currentWubiCode: null, // 当前字符的五笔编码
+      wubiCodeCache: {}, // 五笔编码缓存
+      isLoadingWubiCode: false, // 是否正在加载五笔编码
+      wubiCodeError: null // 五笔编码错误信息
     };
   },
   computed: {
@@ -138,6 +173,18 @@ export default {
       const minutes = this.elapsedTime / 60000; // Convert ms to minutes
       const charsTyped = this.userInput.length;
       return (charsTyped / minutes).toFixed(2);
+    },
+    currentCharacter() {
+      if (!this.currentArticle || this.currentArticle.content.length === 0) return null;
+      if (this.currentCharIndex >= this.currentArticle.content.length) return null;
+
+      const char = this.currentArticle.content[this.currentCharIndex];
+
+      // 检查字符是否是汉字（基本汉字范围）
+      const isChineseChar = /[\u4e00-\u9fa5]/.test(char);
+
+      // 如果不是汉字，返回null，这样不会尝试获取五笔编码
+      return isChineseChar ? char : null;
     }
   },
   async mounted() {
@@ -173,6 +220,8 @@ export default {
       this.selectedArticleId = value;
       this.currentArticle = this.articles.find(a => a.id === value) || null;
       this.resetPractice();
+      // 清空缓存，因为不同文章可能有不同的字符
+      this.wubiCodeCache = {};
     },
     startTypingPractice() {
       if (!this.startTime) {
@@ -184,6 +233,9 @@ export default {
     },
     resetPractice() {
       this.userInput = '';
+      this.currentCharIndex = 0;
+      this.currentWubiCode = null;
+      this.wubiCodeError = null;
       if (this.timer) {
         clearInterval(this.timer);
         this.timer = null;
@@ -205,13 +257,134 @@ export default {
         this.searchResult = null;
         return;
       }
-      
+
       try {
         const response = await axios.get(`/api/search-wubi-root/${encodeURIComponent(value)}`);
         this.searchResult = response.data;
       } catch (error) {
         console.error('搜索字根失败:', error);
         this.searchResult = null;
+      }
+    },
+    handleUserInput() {
+      // 更新当前光标位置为用户输入长度
+      this.currentCharIndex = this.userInput.length;
+
+      // 如果当前字符存在且是汉字，获取其五笔编码
+      if (this.currentCharacter) {
+        this.fetchWubiCodeForCurrentChar();
+      } else {
+        // 如果没有当前字符或不是汉字，清空提示
+        this.currentWubiCode = null;
+        this.wubiCodeError = null;
+        this.isLoadingWubiCode = false;
+
+        // 如果当前字符存在但不是汉字，显示提示
+        if (this.currentCharIndex < this.currentArticle.content.length) {
+          const char = this.currentArticle.content[this.currentCharIndex];
+          if (char.trim() && !/[\u4e00-\u9fa5]/.test(char)) {
+            this.wubiCodeError = `"${char}"不是汉字，无需五笔编码`;
+          }
+        }
+      }
+    },
+    async fetchWubiCodeForCurrentChar() {
+      const char = this.currentCharacter;
+
+      // 检查缓存
+      if (this.wubiCodeCache[char]) {
+        this.currentWubiCode = this.wubiCodeCache[char];
+        this.wubiCodeError = null;
+        return;
+      }
+
+      // 重置状态
+      this.currentWubiCode = null;
+      this.wubiCodeError = null;
+      this.isLoadingWubiCode = true;
+
+      try {
+        const response = await axios.get(`/api/wubi/${encodeURIComponent(char)}`);
+        const wubiData = response.data;
+
+        // 缓存结果
+        this.wubiCodeCache[char] = wubiData;
+        this.currentWubiCode = wubiData;
+        this.wubiCodeError = null;
+      } catch (error) {
+        console.error(`获取"${char}"的五笔编码失败:`, error);
+
+        // 处理不同的错误情况
+        if (error.response && error.response.status === 404) {
+          this.wubiCodeError = `未找到"${char}"的五笔编码`;
+        } else if (error.response && error.response.status === 400) {
+          this.wubiCodeError = `"${char}"不是有效的单个汉字`;
+        } else {
+          this.wubiCodeError = `查询失败: ${error.message}`;
+        }
+
+        this.currentWubiCode = null;
+      } finally {
+        this.isLoadingWubiCode = false;
+      }
+    },
+    handleCharClick(index) {
+      // 如果点击的位置在当前输入长度之前，直接显示该字符的五笔编码
+      if (index < this.currentArticle.content.length) {
+        const char = this.currentArticle.content[index];
+
+        // 检查是否是汉字
+        if (/[\u4e00-\u9fa5]/.test(char)) {
+          // 如果缓存中有，直接显示
+          if (this.wubiCodeCache[char]) {
+            this.currentWubiCode = this.wubiCodeCache[char];
+            this.wubiCodeError = null;
+          } else {
+            // 否则获取编码
+            this.fetchWubiCodeForChar(char);
+          }
+        } else {
+          this.currentWubiCode = null;
+          this.wubiCodeError = `"${char}"不是汉字，无需五笔编码`;
+        }
+      }
+    },
+    async fetchWubiCodeForChar(char) {
+      // 检查缓存
+      if (this.wubiCodeCache[char]) {
+        this.currentWubiCode = this.wubiCodeCache[char];
+        this.wubiCodeError = null;
+        return;
+      }
+
+      // 重置状态
+      this.currentWubiCode = null;
+      this.wubiCodeError = null;
+      this.isLoadingWubiCode = true;
+
+      try {
+        const response = await axios.get(`/api/wubi/${encodeURIComponent(char)}`);
+        const wubiData = response.data;
+
+        // 缓存结果
+        this.wubiCodeCache[char] = wubiData;
+        this.currentWubiCode = wubiData;
+        this.wubiCodeError = null;
+      } catch (error) {
+        console.error(`获取"${char}"的五笔编码失败:`, error);
+
+        // 处理不同的错误情况
+        if (error.response && error.response.status === 404) {
+          this.wubiCodeError = `未找到"${char}"的五笔编码`;
+        } else if (error.response && error.response.status === 400) {
+          this.wubiCodeError = `"${char}"不是有效的单个汉字`;
+        } else {
+          this.wubiCodeError = `查询失败: ${error.message}`;
+        }
+
+        this.currentWubiCode = null;
+      } finally {
+        this.isLoadingWubiCode = false;
       }
     },
     formatTime(ms) {
@@ -298,6 +471,16 @@ export default {
 .control-buttons {
   margin-top: 16px;
   text-align: center;
+}
+
+.wubi-hint-section {
+  margin-top: 16px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .wubi-search {
