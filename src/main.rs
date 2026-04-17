@@ -32,6 +32,7 @@ mod data;
 /// Use tracing crates for application-level tracing output.
 use sqlx::mysql::MySqlPool;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tower_http::cors::{CorsLayer, Any};
 
 /// The main function does these steps: 
 /// - Start tracing and emit a tracing event.
@@ -45,6 +46,9 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
     tracing::event!(tracing::Level::INFO, "main");
+
+    // Load environment variables from .env file
+    dotenvy::dotenv().ok();
 
     // Get command line arguments.
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -68,6 +72,14 @@ async fn main() {
 
     // Create our application which is an axum router.
     let app = crate::app::app(state);
+
+    // Add CORS middleware to allow frontend requests.
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
+
+    let app = app.layer(cors);
 
     // Run our app using a hyper server.
     let listener = tokio::net::TcpListener::bind(bind_address).await.unwrap();

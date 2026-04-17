@@ -1,11 +1,58 @@
 use axum::{extract::{Path, State}, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use sqlx::mysql::MySqlPool;
+use argon2::{Argon2, PasswordHash, PasswordVerifier, PasswordHasher};
+use argon2::password_hash::SaltString;
+use jsonwebtoken::{encode, decode, Header, Validation, Algorithm, EncodingKey, DecodingKey};
+use chrono::{Utc, Duration};
+use std::env;
+use rand::Rng;
+use axum_extra::extract::TypedHeader;
+use axum_extra::headers::authorization::{Authorization, Bearer};
 
 /// Shared application state for Axum handlers.
 #[derive(Clone)]
 pub struct AppState {
     pub pool: MySqlPool,
+}
+
+/// A user record.
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct User {
+    pub id: i32,
+    pub username: String,
+    pub email: String,
+    pub password_hash: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// Input payload for user login.
+#[derive(Debug, Deserialize)]
+pub struct LoginRequest {
+    pub username: String,
+    pub password: String,
+}
+
+/// Input payload for user registration.
+#[derive(Debug, Deserialize)]
+pub struct RegisterRequest {
+    pub username: String,
+    pub email: String,
+    pub password: String,
+}
+
+/// Output payload for user login.
+#[derive(Debug, Serialize)]
+pub struct LoginResponse {
+    pub access_token: String,
+    pub user: User,
+}
+
+/// Claims for JWT token.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Claims {
+    pub sub: String,
+    pub exp: i64,
 }
 
 /// A Wubi tutorial lesson record.
@@ -79,6 +126,21 @@ pub struct NewWubiRoot {
 
 /// Initialize the database schema and insert starter lessons.
 pub async fn init_db(pool: &MySqlPool) -> Result<(), sqlx::Error> {
+    // Create users table
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(64) NOT NULL UNIQUE,
+            email VARCHAR(255) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        "#,
+    )
+    .execute(pool)
+    .await?;
+
     // Create lessons table
     sqlx::query(
         r#"
@@ -706,4 +768,166 @@ pub async fn get_wubi_code(
     })?;
 
     Ok(Json(result))
+}
+
+/// Generate JWT token for user.
+pub fn generate_token(user_id: i32) -> Result<String, jsonwebtoken::errors::Error> {
+    let secret = env::var("JWT_SECRET").unwrap_or_else(|_| "your-secret-key".to_string());
+    let expiration = Utc::now() + Duration::hours(24);
+    
+    let claims = Claims {
+        sub: user_id.to_string(),
+        exp: expiration.timestamp(),
+    };
+    
+    let key = EncodingKey::from_secret(secret.as_bytes());
+    encode(&Header::default(), &claims, &key)
+}
+
+/// Validate JWT token.
+pub fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
+    let secret = env::var("JWT_SECRET").unwrap_or_else(|_| "your-secret-key".to_string());
+    let validation = Validation::new(Algorithm::HS256);
+    
+    let key = DecodingKey::from_secret(secret.as_bytes());
+    let decoded = decode::<Claims>(token, &key, &validation)?;
+    Ok(decoded.claims)
+}
+
+/// Login user.
+pub async fn login(
+    State(state): State<AppState>,
+    Json(payload): Json<LoginRequest>,
+) -> Result<Json<LoginResponse>, StatusCode> {
+    // Find user by username
+    let user = sqlx::query_as::<_, User>(
+        "SELECT id, username, email, password_hash, created_at FROM users WHERE username = ?"
+    )
+    .bind(&payload.username)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+    match user {
+        Some(user) => {
+            // Verify password
+            let argon2 = Argon2::default();
+            let password_hash = PasswordHash::new(&user.password_hash)
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            
+            if argon2.verify_password(payload.password.as_bytes(), &password_hash)
+                .is_err() {
+                return Err(StatusCode::UNAUTHORIZED);
+            }
+            
+            // Generate token
+            let token = generate_token(user.id)
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            
+            Ok(Json(LoginResponse {
+                access_token: token,
+                user,
+            }))
+        },
+        None => Err(StatusCode::UNAUTHORIZED),
+    }
+}
+
+/// Logout user (client-side logout by removing token).
+pub async fn logout() -> StatusCode {
+    // Logout is handled client-side by removing the token
+    StatusCode::OK
+}
+
+/// Register user.
+pub async fn register(
+    State(state): State<AppState>,
+    Json(payload): Json<RegisterRequest>,
+) -> Result<Json<LoginResponse>, StatusCode> {
+    // Check if username already exists
+    let existing_user = sqlx::query_scalar::<_, Option<i32>>(
+        "SELECT id FROM users WHERE username = ?"
+    )
+    .bind(&payload.username)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+    if existing_user.is_some() {
+        return Err(StatusCode::CONFLICT);
+    }
+    
+    // Hash password
+    let salt = SaltString::generate(&mut rand::thread_rng());
+    let argon2 = Argon2::default();
+    let password_hash = argon2.hash_password(payload.password.as_bytes(), &salt)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .to_string();
+    
+    // Insert user into database
+    let result = sqlx::query(
+        "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)"
+    )
+    .bind(&payload.username)
+    .bind(&payload.email)
+    .bind(&password_hash)
+    .execute(&state.pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+    let user_id = result.last_insert_id() as i32;
+    
+    // Get the created user
+    let user = sqlx::query_as::<_, User>(
+        "SELECT id, username, email, password_hash, created_at FROM users WHERE id = ?"
+    )
+    .bind(user_id)
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+    // Generate token
+    let token = generate_token(user.id)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+    Ok(Json(LoginResponse {
+        access_token: token,
+        user,
+    }))
+}
+
+/// Auth middleware to protect routes.
+pub async fn auth_middleware(
+    TypedHeader(auth): TypedHeader<Authorization<Bearer>>,
+    State(state): State<AppState>,
+    req: axum::http::Request<axum::body::Body>,
+    next: axum::middleware::Next,
+) -> Result<axum::response::Response, StatusCode> {
+    let token = auth.token();
+    
+    // Validate token
+    let claims = validate_token(token)
+        .map_err(|_| StatusCode::UNAUTHORIZED)?;
+    
+    let user_id = claims.sub.parse::<i32>()
+        .map_err(|_| StatusCode::UNAUTHORIZED)?;
+    
+    // Verify user exists
+    let user_exists = sqlx::query_scalar::<_, Option<i32>>(
+        "SELECT id FROM users WHERE id = ?"
+    )
+    .bind(user_id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    
+    match user_exists {
+        Some(_) => {
+            // Add user_id to request extensions
+            let mut req = req;
+            req.extensions_mut().insert(user_id);
+            Ok(next.run(req).await)
+        },
+        None => Err(StatusCode::UNAUTHORIZED),
+    }
 }
