@@ -4,7 +4,7 @@ Demonstration of:
 
 - [Rust](https://www.rust-lang.org): programming language that focuses on reliability and stability.
 
-- [axum](https://crates.io/crates/axum): web framework that focuses on ergonomics and modularity.
+- [axum](https://crates.io/crates/axum): web framework that focuses on ergonomics人体工程学 and modularity.
 
 - [tower](https://crates.io/crates/tower): library for building robust clients and servers.
 

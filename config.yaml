@@ -1,0 +1,32 @@
+# Application Configuration
+server:
+  host: "0.0.0.0"
+  port: 3000
+  log_level: "info"
+
+database:
+  # 数据库类型: "mysql" 或 "postgres"
+  # 默认使用mysql，生产环境使用postgres
+  type: "mysql"
+  
+  # MySQL配置
+  mysql:
+    host: "127.0.0.1"
+    port: 3306
+    username: "root"
+    password: "sdsSDG123*^DD"
+    database: "wubi"
+    max_connections: 10
+    
+  # PostgreSQL配置（生产环境使用）
+  postgres:
+    host: "127.0.0.1"
+    port: 5432
+    username: "postgres"
+    password: "password"
+    database: "wubi_demo"
+    max_connections: 10
+
+auth:
+  jwt_secret: "your-secret-key-change-in-production"
+  token_expiration_hours: 24
