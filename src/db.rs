@@ -1418,9 +1418,9 @@ impl Database for PostgresDatabase {
         
         if count == 0 {
             let lessons = [
-                ("人", "W", "单人旁，常用字根"),
-                ("口", "K", "口字旁，常用字根"),
-                ("日", "J", "日字旁，常用字根"),
+                ("人", "WG", "练习人字的五笔编码。"),
+                ("日", "KH", "练习日字的五笔编码。"),
+                ("山", "FQ", "练习山字的五笔编码。"),
             ];
             
             for (char, code, desc) in lessons {
@@ -1433,6 +1433,95 @@ impl Database for PostgresDatabase {
                 .execute(&self.pool)
                 .await
                 .map_err(|e| e.to_string())?;
+            }
+        }
+
+        let art_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM articles")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if art_count == 0 {
+            let articles = [
+                ("练习文章一", "五笔字型是一种高效的中文输入法，通过拆分汉字为基本字根进行输入。", "easy"),
+                ("练习文章二", "学习五笔需要掌握字根分布和拆字规则，多加练习才能熟练运用。", "medium"),
+                ("练习文章三", "汉字的结构复杂多样，五笔输入法按照汉字的笔画和结构规律进行编码。", "hard"),
+            ];
+            
+            for (title, content, difficulty) in articles {
+                sqlx::query(
+                    "INSERT INTO articles (title, content, difficulty) VALUES ($1, $2, $3)"
+                )
+                .bind(title)
+                .bind(content)
+                .bind(difficulty)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        let root_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM wubi_roots")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if root_count == 0 {
+            let roots = [
+                ("一", "GGLL", "G区第一键", "横区起首字根"),
+                ("丿", "TTLL", "T区第一键", "撇区起首字根"),
+                ("丨", "HHLL", "H区第一键", "竖区起首字根"),
+                ("丶", "YYLL", "Y区第一键", "捺区起首字根"),
+                ("乙", "NNLL", "N区第一键", "折区起首字根"),
+                ("九", "VTNG", "V区第二键", "字根：乙"),
+                ("力", "LTNN", "L键", "字根：力"),
+                ("乃", "DETN", "N键", "字根：乃"),
+                ("刀", "VNTE", "V键", "字根：刀"),
+                ("卜", "HHYD", "H键", "字根：卜"),
+            ];
+            
+            for (char, code, position, desc) in roots {
+                sqlx::query(
+                    "INSERT INTO wubi_roots (character_val, code, position, description) VALUES ($1, $2, $3, $4)"
+                )
+                .bind(char)
+                .bind(code)
+                .bind(position)
+                .bind(desc)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        let char_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM wubi_characters")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if char_count == 0 {
+            let dict_path = "data/wubi_dict.json";
+            if Path::new(dict_path).exists() {
+                let content = fs::read_to_string(dict_path)
+                    .map_err(|e| format!("Failed to read wubi dictionary: {}", e))?;
+                let entries: Vec<WubiDictEntry> = serde_json::from_str(&content)
+                    .map_err(|e| format!("Failed to parse wubi dictionary: {}", e))?;
+                
+                let entries_len = entries.len();
+                println!("Importing {} wubi dictionary entries to PostgreSQL...", entries_len);
+                
+                for entry in entries {
+                    sqlx::query(
+                        "INSERT INTO wubi_characters (character_val, wubi_code) VALUES ($1, $2) ON CONFLICT (character_val) DO NOTHING"
+                    )
+                    .bind(&entry.character)
+                    .bind(&entry.code)
+                    .execute(&self.pool)
+                    .await
+                    .map_err(|e| e.to_string())?;
+                }
+                
+                println!("Wubi dictionary import complete: {} entries", entries_len);
             }
         }
 
@@ -1613,7 +1702,7 @@ impl Database for PostgresDatabase {
     }
 
     async fn get_user_by_username(&self, username: &str) -> Result<Option<User>, String> {
-        let result = sqlx::query_as::<_, (i32, String, String, String, chrono::DateTime<chrono::Utc>)>(
+        let result = sqlx::query_as::<_, (i32, String, String, String, Option<chrono::NaiveDateTime>)>(
             "SELECT id, username, email, password_hash, created_at FROM users WHERE username = $1"
         )
         .bind(username)
@@ -1622,12 +1711,12 @@ impl Database for PostgresDatabase {
         .map_err(|e| e.to_string())?;
 
         Ok(result.map(|(id, username, email, password_hash, created_at)| User {
-            id, username, email, password_hash, created_at: created_at.to_rfc3339()
+            id, username, email, password_hash, created_at: created_at.map(|dt| dt.and_utc().to_rfc3339()).unwrap_or_default()
         }))
     }
 
     async fn get_user_by_id(&self, id: i32) -> Result<Option<User>, String> {
-        let result = sqlx::query_as::<_, (i32, String, String, String, chrono::DateTime<chrono::Utc>)>(
+        let result = sqlx::query_as::<_, (i32, String, String, String, Option<chrono::NaiveDateTime>)>(
             "SELECT id, username, email, password_hash, created_at FROM users WHERE id = $1"
         )
         .bind(id)
@@ -1636,12 +1725,12 @@ impl Database for PostgresDatabase {
         .map_err(|e| e.to_string())?;
 
         Ok(result.map(|(id, username, email, password_hash, created_at)| User {
-            id, username, email, password_hash, created_at: created_at.to_rfc3339()
+            id, username, email, password_hash, created_at: created_at.map(|dt| dt.and_utc().to_rfc3339()).unwrap_or_default()
         }))
     }
 
     async fn create_user(&self, username: &str, email: &str, password_hash: &str) -> Result<User, String> {
-        let user = sqlx::query_as::<_, (i32, String, String, String, chrono::DateTime<chrono::Utc>)>(
+        let user = sqlx::query_as::<_, (i32, String, String, String, Option<chrono::NaiveDateTime>)>(
             "INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email, password_hash, created_at"
         )
         .bind(username)
@@ -1651,7 +1740,7 @@ impl Database for PostgresDatabase {
         .await
         .map_err(|e| e.to_string())
         .map(|(id, username, email, password_hash, created_at)| User {
-            id, username, email, password_hash, created_at: created_at.to_rfc3339()
+            id, username, email, password_hash, created_at: created_at.map(|dt| dt.and_utc().to_rfc3339()).unwrap_or_default()
         });
         user
     }

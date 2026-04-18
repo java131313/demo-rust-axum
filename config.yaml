@@ -21,7 +21,7 @@ database:
   # PostgreSQL配置（生产环境使用）
   postgres:
     host: "127.0.0.1"
-    port: 5432
+    port: 5433
     username: "postgres"
     password: "password"
     database: "wubi_demo"
