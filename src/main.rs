@@ -63,6 +63,7 @@ async fn main() {
         }
         "postgres" | "postgresql" => {
             let database_url = config.get_database_url();
+            println!("PostgreSQL URL: {}", database_url);
             let pool = sqlx::postgres::PgPool::connect(&database_url)
                 .await
                 .expect("failed to connect to PostgreSQL database");
