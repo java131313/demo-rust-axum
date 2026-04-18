@@ -32,47 +32,67 @@ mod book;
 mod data;
 
 /// Use tracing crates for application-level tracing output.
-use sqlx::mysql::MySqlPool;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tower_http::cors::{CorsLayer, Any};
+use std::sync::Arc;
+use crate::db::Database;
 
-/// The main function does these steps: 
-/// - Start tracing and emit a tracing event.
-/// - Get a command line argument as our bind address.
-/// - Create our application which is an axum router/.
-/// - Run our app using a hyper server.
 #[tokio::main]  
 async fn main() {
-    // Start tracing and emit a tracing event.
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .init();
     tracing::event!(tracing::Level::INFO, "main");
 
-    // Load configuration from config.yaml
     let config = crate::config::AppConfig::from_file("config.yaml")
         .expect("failed to load config.yaml");
     
     println!("Database type: {}", config.get_db_type());
     println!("Server address: {}", config.server_address());
 
-    // Create MySQL connection pool
-    let database_url = config.get_database_url();
-    let pool = MySqlPool::connect(&database_url)
-        .await
-        .expect("failed to connect to MySQL database");
-    
-    // Initialize database schema
-    crate::wubi::init_db(&pool)
-        .await
-        .expect("failed to initialize database schema");
+    let db: Arc<dyn crate::db::Database> = match config.get_db_type() {
+        "mysql" => {
+            let database_url = config.get_database_url();
+            let pool = sqlx::mysql::MySqlPool::connect(&database_url)
+                .await
+                .expect("failed to connect to MySQL database");
+            
+            let db = crate::db::MySqlDatabase::new(pool);
+            db.init_db().await.expect("failed to initialize database");
+            Arc::new(db)
+        }
+        "postgres" | "postgresql" => {
+            let database_url = config.get_database_url();
+            let pool = sqlx::postgres::PgPool::connect(&database_url)
+                .await
+                .expect("failed to connect to PostgreSQL database");
+            
+            let db = crate::db::PostgresDatabase::new(pool);
+            db.init_db().await.expect("failed to initialize database");
+            Arc::new(db)
+        }
+        "redis" => {
+            let redis_url = config.database.redis.url.clone();
+            let db = crate::db::RedisDatabase::new(&redis_url)
+                .expect("failed to create Redis client");
+            db.init_db().await.expect("failed to initialize Redis");
+            Arc::new(db)
+        }
+        "mongo" | "mongodb" => {
+            let mongo_uri = config.database.mongo.uri.clone();
+            let db = crate::db::MongoDatabase::new(&mongo_uri)
+                .await
+                .expect("failed to create MongoDB client");
+            db.init_db().await.expect("failed to initialize MongoDB");
+            Arc::new(db)
+        }
+        _ => panic!("Unsupported database type: {}", config.get_db_type()),
+    };
 
-    let state = crate::wubi::AppState { pool };
+    let state = crate::wubi::AppState { db };
 
-    // Create our application which is an axum router.
     let app = crate::app::app(state);
 
-    // Add CORS middleware to allow frontend requests.
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
@@ -80,7 +100,6 @@ async fn main() {
 
     let app = app.layer(cors);
 
-    // Run our app using a hyper server.
     let listener = tokio::net::TcpListener::bind(config.server_address()).await.unwrap();
     println!("Server listening on {}", config.server_address());
     axum::serve(listener, app)

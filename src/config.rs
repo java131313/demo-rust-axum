@@ -24,15 +24,34 @@ fn default_log_level() -> String {
 /// 数据库配置
 #[derive(Debug, Deserialize, Clone)]
 pub struct DatabaseConfig {
-    /// 数据库类型: "mysql" 或 "postgres"
+    /// 数据库类型: "mysql" 或 "postgres" 或 "redis" 或 "mongo"
     #[serde(rename = "type", default = "default_db_type")]
     pub db_type: String,
     pub mysql: DbConnectionConfig,
     pub postgres: DbConnectionConfig,
+    pub redis: RedisConfig,
+    pub mongo: MongoConfig,
 }
 
 fn default_db_type() -> String {
-    "mysql".to_string()
+    "mongo".to_string()
+}
+
+/// Redis配置
+#[derive(Debug, Deserialize, Clone)]
+pub struct RedisConfig {
+    pub url: String,
+    #[serde(default = "default_max_connections")]
+    pub max_connections: u32,
+}
+
+/// MongoDB配置
+#[derive(Debug, Deserialize, Clone)]
+pub struct MongoConfig {
+    pub uri: String,
+    pub database: String,
+    #[serde(default = "default_max_connections")]
+    pub max_pool_size: u32,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -86,6 +105,12 @@ impl AppConfig {
                     "postgresql://{}:{}@{}:{}/{}",
                     db.username, db.password, db.host, db.port, db.database
                 )
+            }
+            "redis" => {
+                self.database.redis.url.clone()
+            }
+            "mongo" | "mongodb" => {
+                self.database.mongo.uri.clone()
             }
             _ => panic!("不支持的数据库类型: {}", self.database.db_type),
         }

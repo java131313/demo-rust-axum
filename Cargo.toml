@@ -34,6 +34,10 @@ tracing-subscriber = { version = "~0.3.19", features = ["env-filter"] } # Utilit
 thiserror = { version = "~2.0.3" } # Error handling library.
 async-trait = "~0.1.77" # Async trait support
 serde_yaml = "~0.9.32" # YAML configuration parsing
+redis = { version = "~0.25.2", features = ["tokio-comp", "json"] } # Redis client with async support
+mongodb = { version = "~2.8" } # MongoDB driver with async support
+bson = "~2.9" # BSON serialization for MongoDB
+futures = "~0.3" # For async stream utilities
 
 # 认证相关依赖（用户选择：JWT令牌）
 argon2 = { version = "~0.5.0", features = ["std"] }          # 密码哈希
