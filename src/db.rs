@@ -8,12 +8,15 @@ use futures::stream::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use crate::config::{User, Lesson, Article, WubiRoot, WubiCharacter};
+use crate::config::{User, Lesson, Article, WubiRoot, WubiCharacter, KeyRadical, EnglishText};
 
 #[derive(Debug, Deserialize)]
 struct WubiDictEntry {
     character: String,
-    code: String,
+    simple_code: String,
+    full_code: String,
+    pinyin: String,
+    remark: String,
 }
 
 /// 数据库池的枚举类型
@@ -53,6 +56,15 @@ pub trait Database: Send + Sync {
     /// 创建文章
     async fn create_article(&self, title: &str, content: &str, difficulty: &str) -> Result<Article, String>;
     
+    /// 更新文章
+    async fn update_article(&self, id: i32, title: &str, content: &str, difficulty: &str) -> Result<Article, String>;
+    
+    /// 删除文章
+    async fn delete_article(&self, id: i32) -> Result<(), String>;
+    
+    /// 更新五笔编码
+    async fn update_wubi_code(&self, character: &str, new_code: &str) -> Result<WubiCharacter, String>;
+    
     /// 获取字根列表
     async fn get_wubi_roots(&self) -> Result<Vec<WubiRoot>, String>;
     
@@ -76,6 +88,15 @@ pub trait Database: Send + Sync {
     
     /// 保存用户进度
     async fn save_progress(&self, user_name: &str, lesson_id: i32, accuracy: f32, score: i32) -> Result<(), String>;
+    
+    /// 获取所有键位字根
+    async fn get_key_radicals(&self) -> Result<Vec<KeyRadical>, String>;
+    
+    /// 根据键位获取字根
+    async fn get_key_radical_by_key(&self, key_char: &str) -> Result<Option<KeyRadical>, String>;
+    
+    /// 获取所有英语练习文章
+    async fn get_english_texts(&self) -> Result<Vec<EnglishText>, String>;
 }
 
 /// MySQL数据库实现
@@ -140,8 +161,11 @@ impl Database for MySqlDatabase {
             r#"
             CREATE TABLE IF NOT EXISTS wubi_characters (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                character_val VARCHAR(4) NOT NULL UNIQUE,
-                wubi_code VARCHAR(8) NOT NULL,
+                character_val VARCHAR(32) NOT NULL UNIQUE,
+                simple_code VARCHAR(8) NOT NULL DEFAULT '',
+                full_code VARCHAR(8) NOT NULL DEFAULT '',
+                pinyin VARCHAR(32) NOT NULL DEFAULT '',
+                remark VARCHAR(128) NOT NULL DEFAULT '',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             "#
@@ -211,8 +235,8 @@ impl Database for MySqlDatabase {
     }
 
     async fn get_wubi_code(&self, character: &str) -> Result<WubiCharacter, String> {
-        sqlx::query_as::<_, (String, String)>(
-            "SELECT character_val, wubi_code FROM wubi_characters WHERE character_val = ?"
+        sqlx::query_as::<_, (i32, String, String, String, String)>(
+            "SELECT id, character_val, simple_code, full_code, pinyin FROM wubi_characters WHERE character_val = ?"
         )
         .bind(character)
         .fetch_one(&self.pool)
@@ -221,18 +245,20 @@ impl Database for MySqlDatabase {
             sqlx::Error::RowNotFound => "Character not found".to_string(),
             _ => e.to_string(),
         })
-        .map(|(character, wubi_code)| WubiCharacter { character, wubi_code })
+        .map(|(id, character, simple_code, full_code, pinyin)| WubiCharacter { 
+            id, character, simple_code, full_code, pinyin, remark: String::new() 
+        })
     }
 
     async fn get_all_wubi_characters(&self) -> Result<Vec<WubiCharacter>, String> {
-        sqlx::query_as::<_, (String, String)>(
-            "SELECT character_val, wubi_code FROM wubi_characters ORDER BY character_val"
+        sqlx::query_as::<_, (i32, String, String, String, String, String)>(
+            "SELECT id, character_val, simple_code, full_code, pinyin, remark FROM wubi_characters ORDER BY character_val"
         )
         .fetch_all(&self.pool)
         .await
         .map_err(|e| e.to_string())
-        .map(|rows| rows.into_iter().map(|(character, wubi_code)| WubiCharacter {
-            character, wubi_code
+        .map(|rows| rows.into_iter().map(|(id, character, simple_code, full_code, pinyin, remark)| WubiCharacter {
+            id, character, simple_code, full_code, pinyin, remark
         }).collect())
     }
 
@@ -320,6 +346,69 @@ impl Database for MySqlDatabase {
 
         let id = result.last_insert_id() as i32;
         self.get_article_by_id(id).await
+    }
+
+    async fn update_article(&self, id: i32, title: &str, content: &str, difficulty: &str) -> Result<Article, String> {
+        let result = sqlx::query(
+            "UPDATE articles SET title = ?, content = ?, difficulty = ? WHERE id = ?"
+        )
+        .bind(title)
+        .bind(content)
+        .bind(difficulty)
+        .bind(id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+        
+        if result.rows_affected() == 0 {
+            return Err("Article not found".to_string());
+        }
+        self.get_article_by_id(id).await
+    }
+
+    async fn delete_article(&self, id: i32) -> Result<(), String> {
+        let result = sqlx::query("DELETE FROM articles WHERE id = ?")
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if result.rows_affected() == 0 {
+            Err("Article not found".to_string())
+        } else {
+            Ok(())
+        }
+    }
+
+    async fn update_wubi_code(&self, character: &str, new_code: &str) -> Result<WubiCharacter, String> {
+        let result = sqlx::query(
+            "UPDATE wubi_characters SET wubi_code = ? WHERE character_val = ?"
+        )
+        .bind(new_code)
+        .bind(character)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+        
+        if result.rows_affected() == 0 {
+            let _ = sqlx::query(
+                "INSERT IGNORE INTO wubi_characters (character_val, wubi_code) VALUES (?, ?)"
+            )
+            .bind(character)
+            .bind(new_code)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        }
+        
+        Ok(WubiCharacter {
+            id: 0,
+            character: character.to_string(),
+            simple_code: String::new(),
+            full_code: new_code.to_string(),
+            pinyin: String::new(),
+            remark: String::new(),
+        })
     }
 
     async fn get_wubi_roots(&self) -> Result<Vec<WubiRoot>, String> {
@@ -438,6 +527,44 @@ impl Database for MySqlDatabase {
 
         Ok(())
     }
+
+    async fn get_key_radicals(&self) -> Result<Vec<KeyRadical>, String> {
+        sqlx::query_as::<_, (i32, String, String, String)>(
+            "SELECT id, key_char, radicals, description FROM key_radicals ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, key_char, radicals, description)| KeyRadical {
+            id, key_char, radicals, description
+        }).collect())
+    }
+
+    async fn get_key_radical_by_key(&self, key_char: &str) -> Result<Option<KeyRadical>, String> {
+        let result = sqlx::query_as::<_, (i32, String, String, String)>(
+            "SELECT id, key_char, radicals, description FROM key_radicals WHERE key_char = ?"
+        )
+        .bind(key_char)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        Ok(result.map(|(id, key_char, radicals, description)| KeyRadical {
+            id, key_char, radicals, description
+        }))
+    }
+
+    async fn get_english_texts(&self) -> Result<Vec<EnglishText>, String> {
+        sqlx::query_as::<_, (i32, String, String, String)>(
+            "SELECT id, title, content, difficulty FROM english_texts ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, title, content, difficulty)| EnglishText {
+            id, title, content, difficulty
+        }).collect())
+    }
 }
 
 /// Redis数据库实现
@@ -476,7 +603,7 @@ impl RedisDatabase {
         for chunk in entries.chunks(batch_size) {
             let mut pipe = redis::pipe();
             for entry in chunk {
-                pipe.set(&format!("wubi:char:{}", entry.character), &entry.code);
+                pipe.set(&format!("wubi:char:{}", entry.character), &entry.full_code);
             }
             let _: () = pipe.query_async(conn).await
                 .map_err(|e| format!("Failed to batch insert wubi characters: {}", e))?;
@@ -593,8 +720,12 @@ impl Database for RedisDatabase {
         
         match code {
             Some(wubi_code) => Ok(WubiCharacter {
+                id: 0,
                 character: character.to_string(),
-                wubi_code,
+                simple_code: wubi_code.clone(),
+                full_code: wubi_code,
+                pinyin: String::new(),
+                remark: String::new(),
             }),
             None => Err("Character not found".to_string()),
         }
@@ -613,7 +744,14 @@ impl Database for RedisDatabase {
             
             if let Some(code) = wubi_code {
                 let character = key.strip_prefix("wubi:char:").unwrap_or("").to_string();
-                characters.push(WubiCharacter { character, wubi_code: code });
+                characters.push(WubiCharacter { 
+                    id: 0,
+                    character, 
+                    simple_code: code.clone(),
+                    full_code: code,
+                    pinyin: String::new(),
+                    remark: String::new(),
+                });
             }
         }
         
@@ -774,6 +912,67 @@ impl Database for RedisDatabase {
             title: title.to_string(),
             content: content.to_string(),
             difficulty: difficulty.to_string(),
+        })
+    }
+
+    async fn update_article(&self, id: i32, title: &str, content: &str, difficulty: &str) -> Result<Article, String> {
+        let mut conn = self.get_connection().await?;
+        let key = format!("wubi:article:{}", id);
+        
+        let exists: bool = conn.exists(&key).await
+            .map_err(|e| format!("Failed to check article: {}", e))?;
+        
+        if !exists {
+            return Err("Article not found".to_string());
+        }
+        
+        let _: () = conn.hset_multiple(&key, &[
+            ("title", title.to_string()),
+            ("content", content.to_string()),
+            ("difficulty", difficulty.to_string()),
+        ]).await.map_err(|e| format!("Failed to update article: {}", e))?;
+        
+        Ok(Article {
+            id,
+            title: title.to_string(),
+            content: content.to_string(),
+            difficulty: difficulty.to_string(),
+        })
+    }
+
+    async fn delete_article(&self, id: i32) -> Result<(), String> {
+        let mut conn = self.get_connection().await?;
+        let key = format!("wubi:article:{}", id);
+        
+        let exists: bool = conn.exists(&key).await
+            .map_err(|e| format!("Failed to check article: {}", e))?;
+        
+        if !exists {
+            return Err("Article not found".to_string());
+        }
+        
+        let _: () = conn.del(&key).await
+            .map_err(|e| format!("Failed to delete article: {}", e))?;
+        let _: () = conn.srem("wubi:articles", id.to_string()).await
+            .map_err(|e| format!("Failed to remove from set: {}", e))?;
+        
+        Ok(())
+    }
+
+    async fn update_wubi_code(&self, character: &str, new_code: &str) -> Result<WubiCharacter, String> {
+        let mut conn = self.get_connection().await?;
+        let key = format!("wubi:char:{}", character);
+        
+        let _: () = conn.set(&key, new_code).await
+            .map_err(|e| format!("Failed to update wubi code: {}", e))?;
+        
+        Ok(WubiCharacter {
+            id: 0,
+            character: character.to_string(),
+            simple_code: String::new(),
+            full_code: new_code.to_string(),
+            pinyin: String::new(),
+            remark: String::new(),
         })
     }
 
@@ -980,6 +1179,55 @@ impl Database for RedisDatabase {
         
         Ok(())
     }
+
+    async fn get_key_radicals(&self) -> Result<Vec<KeyRadical>, String> {
+        let mut conn = self.get_connection().await?;
+        
+        let keys: Vec<String> = conn.keys("wubi:key_radical:*").await
+            .map_err(|e| format!("Failed to get keys: {}", e))?;
+        
+        let mut results = Vec::new();
+        for key in keys {
+            let radicals: Option<String> = conn.hget(&key, "radicals").await.unwrap_or(None);
+            let description: Option<String> = conn.hget(&key, "description").await.unwrap_or(None);
+            let key_char = key.strip_prefix("wubi:key_radical:").unwrap_or("").to_string();
+            
+            if let Some(radicals) = radicals {
+                let id: i32 = key.split(':').last().unwrap_or("0").parse().unwrap_or(0);
+                results.push(KeyRadical {
+                    id,
+                    key_char,
+                    radicals,
+                    description: description.unwrap_or_default(),
+                });
+            }
+        }
+        
+        results.sort_by_key(|r| r.key_char.clone());
+        Ok(results)
+    }
+
+    async fn get_key_radical_by_key(&self, key_char: &str) -> Result<Option<KeyRadical>, String> {
+        let mut conn = self.get_connection().await?;
+        
+        let key = format!("wubi:key_radical:{}", key_char);
+        let radicals: Option<String> = conn.hget(&key, "radicals").await.map_err(|e| format!("Failed to get radicals: {}", e))?;
+        let description: Option<String> = conn.hget(&key, "description").await.map_err(|e| format!("Failed to get description: {}", e))?;
+        
+        match radicals {
+            Some(radicals) => Ok(Some(KeyRadical {
+                id: 0,
+                key_char: key_char.to_string(),
+                radicals,
+                description: description.unwrap_or_default(),
+            })),
+            None => Ok(None),
+        }
+    }
+
+    async fn get_english_texts(&self) -> Result<Vec<EnglishText>, String> {
+        Ok(vec![])
+    }
 }
 
 /// MongoDB数据库实现
@@ -1000,7 +1248,7 @@ impl MongoDatabase {
     }
 
     async fn import_wubi_dict(&self) -> Result<(), String> {
-        let dict_path = "data/wubi_dict.json";
+        let dict_path = "data/wubi86_converted.json";
         if !Path::new(dict_path).exists() {
             return Err(format!("Wubi dictionary file not found: {}", dict_path));
         }
@@ -1014,7 +1262,13 @@ impl MongoDatabase {
         println!("Importing {} wubi dictionary entries to MongoDB...", entries_len);
         let mut docs = Vec::new();
         for entry in entries {
-            docs.push(doc! { "character": entry.character, "wubi_code": entry.code });
+            docs.push(doc! { 
+                "character": entry.character, 
+                "simple_code": entry.simple_code,
+                "full_code": entry.full_code,
+                "pinyin": entry.pinyin,
+                "remark": entry.remark,
+            });
         }
         if !docs.is_empty() {
             chars_collection.insert_many(docs, None).await
@@ -1095,8 +1349,13 @@ impl Database for MongoDatabase {
             .map_err(|e| format!("Failed to query wubi code: {}", e))?;
         match doc {
             Some(doc) => {
-                let wubi_code = doc.get_str("wubi_code").map_err(|e| e.to_string())?.to_string();
-                Ok(WubiCharacter { character: character.to_string(), wubi_code })
+                let id = doc.get_i32("id").unwrap_or(0);
+                let character = doc.get_str("character").map_err(|e| e.to_string())?.to_string();
+                let simple_code = doc.get_str("simple_code").map_err(|_| "")?.to_string();
+                let full_code = doc.get_str("full_code").map_err(|_| "")?.to_string();
+                let pinyin = doc.get_str("pinyin").map_err(|_| "")?.to_string();
+                let remark = doc.get_str("remark").map_err(|_| "")?.to_string();
+                Ok(WubiCharacter { id, character, simple_code, full_code, pinyin, remark })
             }
             None => Err("Character not found".to_string()),
         }
@@ -1109,9 +1368,13 @@ impl Database for MongoDatabase {
             .map_err(|e| format!("Failed to query characters: {}", e))?;
         let mut characters = Vec::new();
         while let Some(doc) = cursor.try_next().await.map_err(|e: mongodb::error::Error| e.to_string())? {
+            let id = doc.get_i32("id").unwrap_or(0);
             let character = doc.get_str("character").map_err(|e: mongodb::bson::document::ValueAccessError| e.to_string())?.to_string();
-            let wubi_code = doc.get_str("wubi_code").map_err(|e: mongodb::bson::document::ValueAccessError| e.to_string())?.to_string();
-            characters.push(WubiCharacter { character, wubi_code });
+            let simple_code = doc.get_str("simple_code").map_err(|_| "")?.to_string();
+            let full_code = doc.get_str("full_code").map_err(|_| "")?.to_string();
+            let pinyin = doc.get_str("pinyin").map_err(|_| "")?.to_string();
+            let remark = doc.get_str("remark").map_err(|_| "")?.to_string();
+            characters.push(WubiCharacter { id, character, simple_code, full_code, pinyin, remark });
         }
         characters.sort_by(|a, b| a.character.cmp(&b.character));
         Ok(characters)
@@ -1185,6 +1448,43 @@ impl Database for MongoDatabase {
             .map(|oid| oid.to_hex().chars().take(8).map(|c| c as i32).sum())
             .unwrap_or(0);
         Ok(Article { id, title: title.to_string(), content: content.to_string(), difficulty: difficulty.to_string() })
+    }
+
+    async fn update_article(&self, id: i32, title: &str, content: &str, difficulty: &str) -> Result<Article, String> {
+        let db = self.get_db();
+        let collection = db.collection::<Document>("articles");
+        collection.update_many(
+            doc! { "id": id },
+            doc! { "$set": { "title": title, "content": content, "difficulty": difficulty } },
+            None,
+        ).await.map_err(|e| format!("Failed to update article: {}", e))?;
+        Ok(Article { id, title: title.to_string(), content: content.to_string(), difficulty: difficulty.to_string() })
+    }
+
+    async fn delete_article(&self, id: i32) -> Result<(), String> {
+        let db = self.get_db();
+        let collection = db.collection::<Document>("articles");
+        collection.delete_many(doc! { "id": id }, None).await
+            .map_err(|e| format!("Failed to delete article: {}", e))?;
+        Ok(())
+    }
+
+    async fn update_wubi_code(&self, character: &str, new_code: &str) -> Result<WubiCharacter, String> {
+        let db = self.get_db();
+        let collection = db.collection::<Document>("wubi_characters");
+        let filter = doc! { "character": character };
+        let update = doc! { "$set": { "full_code": new_code } };
+        let opts = mongodb::options::UpdateOptions::builder().upsert(true).build();
+        collection.update_one(filter, update, opts).await
+            .map_err(|e| format!("Failed to update wubi code: {}", e))?;
+        Ok(WubiCharacter { 
+            id: 0,
+            character: character.to_string(), 
+            simple_code: String::new(),
+            full_code: new_code.to_string(),
+            pinyin: String::new(),
+            remark: String::new(),
+        })
     }
 
     async fn get_wubi_roots(&self) -> Result<Vec<WubiRoot>, String> {
@@ -1286,6 +1586,55 @@ impl Database for MongoDatabase {
             .map_err(|e| format!("Failed to save progress: {}", e))?;
         Ok(())
     }
+
+    async fn get_key_radicals(&self) -> Result<Vec<KeyRadical>, String> {
+        let db = self.get_db();
+        let collection = db.collection::<Document>("key_radicals");
+        let mut cursor = collection.find(doc! {}, None).await
+            .map_err(|e| format!("Failed to query key_radicals: {}", e))?;
+        let mut results = Vec::new();
+        while let Some(doc) = cursor.try_next().await.map_err(|e| e.to_string())? {
+            let id = doc.get_i32("id").unwrap_or(0);
+            let key_char = doc.get_str("key_char").unwrap_or("").to_string();
+            let radicals = doc.get_str("radicals").unwrap_or("").to_string();
+            let description = doc.get_str("description").unwrap_or("").to_string();
+            results.push(KeyRadical { id, key_char, radicals, description });
+        }
+        Ok(results)
+    }
+
+    async fn get_key_radical_by_key(&self, key_char: &str) -> Result<Option<KeyRadical>, String> {
+        let db = self.get_db();
+        let collection = db.collection::<Document>("key_radicals");
+        let doc = collection.find_one(doc! { "key_char": key_char }, None).await
+            .map_err(|e| format!("Failed to query key_radical: {}", e))?;
+        match doc {
+            Some(doc) => {
+                let id = doc.get_i32("id").unwrap_or(0);
+                let key_char = doc.get_str("key_char").unwrap_or("").to_string();
+                let radicals = doc.get_str("radicals").unwrap_or("").to_string();
+                let description = doc.get_str("description").unwrap_or("").to_string();
+                Ok(Some(KeyRadical { id, key_char, radicals, description }))
+            }
+            None => Ok(None),
+        }
+    }
+
+    async fn get_english_texts(&self) -> Result<Vec<EnglishText>, String> {
+        let db = self.get_db();
+        let collection = db.collection::<Document>("english_texts");
+        let mut cursor = collection.find(doc! {}, None).await
+            .map_err(|e| format!("Failed to query english_texts: {}", e))?;
+        let mut results = Vec::new();
+        while let Some(doc) = cursor.try_next().await.map_err(|e| e.to_string())? {
+            let id = doc.get_i32("id").unwrap_or(0);
+            let title = doc.get_str("title").unwrap_or("").to_string();
+            let content = doc.get_str("content").unwrap_or("").to_string();
+            let difficulty = doc.get_str("difficulty").unwrap_or("").to_string();
+            results.push(EnglishText { id, title, content, difficulty });
+        }
+        Ok(results)
+    }
 }
 
 impl MongoDatabase {
@@ -1365,12 +1714,20 @@ impl Database for PostgresDatabase {
         .await
         .map_err(|e| e.to_string())?;
 
+        sqlx::query("DROP TABLE IF EXISTS wubi_characters")
+            .execute(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS wubi_characters (
                 id SERIAL PRIMARY KEY,
-                character_val VARCHAR(4) NOT NULL UNIQUE,
-                wubi_code VARCHAR(8) NOT NULL,
+                character_val VARCHAR(32) NOT NULL UNIQUE,
+                simple_code VARCHAR(8) NOT NULL DEFAULT '',
+                full_code VARCHAR(8) NOT NULL DEFAULT '',
+                pinyin VARCHAR(32) NOT NULL DEFAULT '',
+                remark VARCHAR(128) NOT NULL DEFAULT '',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             "#
@@ -1403,6 +1760,20 @@ impl Database for PostgresDatabase {
                 accuracy FLOAT NOT NULL,
                 score INT NOT NULL,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS key_radicals (
+                id SERIAL PRIMARY KEY,
+                key_char VARCHAR(4) NOT NULL UNIQUE,
+                radicals TEXT NOT NULL,
+                description TEXT
             )
             "#
         )
@@ -1494,13 +1865,60 @@ impl Database for PostgresDatabase {
             }
         }
 
+        let key_radical_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM key_radicals")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if key_radical_count == 0 {
+            let key_radicals = [
+                ("g", "一、五、戈", "G区横区第一键，包含横笔和戈字根"),
+                ("f", "土、二、干", "F区横区第二键，包含土字根"),
+                ("d", "大、三、古", "D区横区第三键，包含大字根"),
+                ("s", "木、丁、西", "S区横区第四键，包含木字根"),
+                ("a", "工、七、草", "A区横区第五键，包含工字根"),
+                ("h", "目、上、止", "H区竖区第一键，包含目字根"),
+                ("j", "日、早、虫", "J区竖区第二键，包含日字根"),
+                ("k", "口、川", "K区竖区第三键，包含口字根"),
+                ("l", "田、甲、车", "L区竖区第四键，包含田字根"),
+                ("m", "山、由、贝", "M区竖区第五键，包含山字根"),
+                ("t", "禾、竹、丿", "T区撇区第一键，包含禾字根"),
+                ("r", "白、手、斤", "R区撇区第二键，包含白字根"),
+                ("e", "月、彡、用", "E区撇区第三键，包含月字根"),
+                ("w", "人、八、祭", "W区撇区第四键，包含人字根"),
+                ("q", "金、勺、鱼", "Q区撇区第五键，包含金字根"),
+                ("y", "言、文、广", "Y区捺区第一键，包含言字根"),
+                ("u", "立、六、辛", "U区捺区第二键，包含立字根"),
+                ("i", "水、小、兴", "I区捺区第三键，包含水字根"),
+                ("o", "火、业、米", "O区捺区第四键，包含火字根"),
+                ("p", "之、冖、广", "P区捺区第五键，包含之字根"),
+                ("n", "已、心、羽", "N区折区第一键，包含已字根"),
+                ("b", "子、了、也", "B区折区第二键，包含子字根"),
+                ("v", "女、刀、九", "V区折区第三键，包含女字根"),
+                ("c", "又、巴、马", "C区折区第四键，包含又字根"),
+                ("x", "丝、弓、匕", "X区折区第五键，包含丝字根"),
+            ];
+            
+            for (key, radicals, desc) in key_radicals {
+                sqlx::query(
+                    "INSERT INTO key_radicals (key_char, radicals, description) VALUES ($1, $2, $3)"
+                )
+                .bind(key)
+                .bind(radicals)
+                .bind(desc)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
         let char_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM wubi_characters")
             .fetch_one(&self.pool)
             .await
             .map_err(|e| e.to_string())?;
         
         if char_count == 0 {
-            let dict_path = "data/wubi_dict.json";
+            let dict_path = "data/wubi86_converted.json";
             if Path::new(dict_path).exists() {
                 let content = fs::read_to_string(dict_path)
                     .map_err(|e| format!("Failed to read wubi dictionary: {}", e))?;
@@ -1512,10 +1930,13 @@ impl Database for PostgresDatabase {
                 
                 for entry in entries {
                     sqlx::query(
-                        "INSERT INTO wubi_characters (character_val, wubi_code) VALUES ($1, $2) ON CONFLICT (character_val) DO NOTHING"
+                        "INSERT INTO wubi_characters (character_val, simple_code, full_code, pinyin, remark) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (character_val) DO NOTHING"
                     )
                     .bind(&entry.character)
-                    .bind(&entry.code)
+                    .bind(&entry.simple_code)
+                    .bind(&entry.full_code)
+                    .bind(&entry.pinyin)
+                    .bind(&entry.remark)
                     .execute(&self.pool)
                     .await
                     .map_err(|e| e.to_string())?;
@@ -1525,12 +1946,52 @@ impl Database for PostgresDatabase {
             }
         }
 
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS english_texts (
+                id SERIAL PRIMARY KEY,
+                title VARCHAR(128) NOT NULL,
+                content TEXT NOT NULL,
+                difficulty VARCHAR(16) NOT NULL
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        let english_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM english_texts")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if english_count == 0 {
+            let english_texts = [
+                ("基础练习", "the quick brown fox jumps over the lazy dog", "easy"),
+                ("常用句子", "hello world this is a typing practice text for english learning", "easy"),
+                ("进阶练习", "practice makes perfect keep typing to improve your speed and accuracy", "medium"),
+                ("高级练习", "the five boxing wizards jump quickly at dawn every single day", "hard"),
+            ];
+            
+            for (title, content, difficulty) in english_texts {
+                sqlx::query(
+                    "INSERT INTO english_texts (title, content, difficulty) VALUES ($1, $2, $3)"
+                )
+                .bind(title)
+                .bind(content)
+                .bind(difficulty)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
         Ok(())
     }
 
     async fn get_wubi_code(&self, character: &str) -> Result<WubiCharacter, String> {
-        sqlx::query_as::<_, (String, String)>(
-            "SELECT character_val, wubi_code FROM wubi_characters WHERE character_val = $1"
+        sqlx::query_as::<_, (i32, String, String, String, String, String)>(
+            "SELECT id, character_val, simple_code, full_code, pinyin, remark FROM wubi_characters WHERE character_val = $1"
         )
         .bind(character)
         .fetch_one(&self.pool)
@@ -1539,18 +2000,18 @@ impl Database for PostgresDatabase {
             sqlx::Error::RowNotFound => "Character not found".to_string(),
             _ => e.to_string(),
         })
-        .map(|(character, wubi_code)| WubiCharacter { character, wubi_code })
+        .map(|(id, character, simple_code, full_code, pinyin, remark)| WubiCharacter { id, character, simple_code, full_code, pinyin, remark })
     }
 
     async fn get_all_wubi_characters(&self) -> Result<Vec<WubiCharacter>, String> {
-        sqlx::query_as::<_, (String, String)>(
-            "SELECT character_val, wubi_code FROM wubi_characters ORDER BY character_val"
+        sqlx::query_as::<_, (i32, String, String, String, String, String)>(
+            "SELECT id, character_val, simple_code, full_code, pinyin, remark FROM wubi_characters ORDER BY character_val"
         )
         .fetch_all(&self.pool)
         .await
         .map_err(|e| e.to_string())
-        .map(|rows| rows.into_iter().map(|(character, wubi_code)| WubiCharacter {
-            character, wubi_code
+        .map(|rows| rows.into_iter().map(|(id, character, simple_code, full_code, pinyin, remark)| WubiCharacter {
+            id, character, simple_code, full_code, pinyin, remark
         }).collect())
     }
 
@@ -1640,6 +2101,71 @@ impl Database for PostgresDatabase {
             id, title, content, difficulty
         });
         article
+    }
+
+    async fn update_article(&self, id: i32, title: &str, content: &str, difficulty: &str) -> Result<Article, String> {
+        let article = sqlx::query_as::<_, (i32, String, String, String)>(
+            "UPDATE articles SET title = $1, content = $2, difficulty = $3 WHERE id = $4 RETURNING id, title, content, difficulty"
+        )
+        .bind(title)
+        .bind(content)
+        .bind(difficulty)
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| match e {
+            sqlx::Error::RowNotFound => "Article not found".to_string(),
+            _ => e.to_string(),
+        })
+        .map(|(id, title, content, difficulty)| Article {
+            id, title, content, difficulty
+        });
+        article
+    }
+
+    async fn delete_article(&self, id: i32) -> Result<(), String> {
+        let result = sqlx::query("DELETE FROM articles WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if result.rows_affected() == 0 {
+            Err("Article not found".to_string())
+        } else {
+            Ok(())
+        }
+    }
+
+    async fn update_wubi_code(&self, character: &str, new_code: &str) -> Result<WubiCharacter, String> {
+        let result = sqlx::query(
+            "UPDATE wubi_characters SET full_code = $1 WHERE character_val = $2"
+        )
+        .bind(new_code)
+        .bind(character)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+        
+        if result.rows_affected() == 0 {
+            let _ = sqlx::query(
+                "INSERT INTO wubi_characters (character_val, full_code) VALUES ($1, $2)"
+            )
+            .bind(character)
+            .bind(new_code)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        }
+        
+        Ok(WubiCharacter {
+            id: 0,
+            character: character.to_string(),
+            simple_code: String::new(),
+            full_code: new_code.to_string(),
+            pinyin: String::new(),
+            remark: String::new(),
+        })
     }
 
     async fn get_wubi_roots(&self) -> Result<Vec<WubiRoot>, String> {
@@ -1758,5 +2284,43 @@ impl Database for PostgresDatabase {
         .map_err(|e| e.to_string())?;
 
         Ok(())
+    }
+
+    async fn get_key_radicals(&self) -> Result<Vec<KeyRadical>, String> {
+        sqlx::query_as::<_, (i32, String, String, String)>(
+            "SELECT id, key_char, radicals, description FROM key_radicals ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, key_char, radicals, description)| KeyRadical {
+            id, key_char, radicals, description
+        }).collect())
+    }
+
+    async fn get_key_radical_by_key(&self, key_char: &str) -> Result<Option<KeyRadical>, String> {
+        let result = sqlx::query_as::<_, (i32, String, String, String)>(
+            "SELECT id, key_char, radicals, description FROM key_radicals WHERE key_char = $1"
+        )
+        .bind(key_char)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        Ok(result.map(|(id, key_char, radicals, description)| KeyRadical {
+            id, key_char, radicals, description
+        }))
+    }
+
+    async fn get_english_texts(&self) -> Result<Vec<EnglishText>, String> {
+        sqlx::query_as::<_, (i32, String, String, String)>(
+            "SELECT id, title, content, difficulty FROM english_texts ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, title, content, difficulty)| EnglishText {
+            id, title, content, difficulty
+        }).collect())
     }
 }

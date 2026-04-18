@@ -164,6 +164,26 @@ pub struct WubiRoot {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WubiCharacter {
+    pub id: i32,
     pub character: String,
-    pub wubi_code: String,
+    pub simple_code: String,
+    pub full_code: String,
+    pub pinyin: String,
+    pub remark: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct EnglishText {
+    pub id: i32,
+    pub title: String,
+    pub content: String,
+    pub difficulty: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct KeyRadical {
+    pub id: i32,
+    pub key_char: String,
+    pub radicals: String,
+    pub description: String,
 }

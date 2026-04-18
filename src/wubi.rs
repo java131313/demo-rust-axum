@@ -227,6 +227,46 @@ pub async fn create_article(
     Ok((StatusCode::CREATED, Json(article)))
 }
 
+pub async fn update_article(
+    Path(id): Path<i32>,
+    State(state): State<AppState>,
+    Json(payload): Json<NewArticle>,
+) -> Result<Json<crate::config::Article>, (StatusCode, String)> {
+    let article = state.db.update_article(id, &payload.title, &payload.content, &payload.difficulty).await
+        .map_err(|err| match err.as_str() {
+            "Article not found" => (StatusCode::NOT_FOUND, err),
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, err),
+        })?;
+    Ok(Json(article))
+}
+
+pub async fn delete_article(
+    Path(id): Path<i32>,
+    State(state): State<AppState>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    state.db.delete_article(id).await
+        .map_err(|err| match err.as_str() {
+            "Article not found" => (StatusCode::NOT_FOUND, err),
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, err),
+        })?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateWubiCode {
+    pub character: String,
+    pub code: String,
+}
+
+pub async fn update_wubi_code_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<UpdateWubiCode>,
+) -> Result<Json<crate::config::WubiCharacter>, StatusCode> {
+    let result = state.db.update_wubi_code(&payload.character, &payload.code).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(Json(result))
+}
+
 pub async fn get_wubi_roots(State(state): State<AppState>) -> Result<Json<Vec<crate::config::WubiRoot>>, StatusCode> {
     let roots = state.db.get_wubi_roots().await.map_err(|e| {
         eprintln!("Error fetching wubi roots: {:?}", e);
@@ -279,6 +319,33 @@ pub async fn get_wubi_code(
         })?;
 
     Ok(Json(result))
+}
+
+pub async fn get_key_radicals(State(state): State<AppState>) -> Result<Json<Vec<crate::config::KeyRadical>>, StatusCode> {
+    let radicals = state.db.get_key_radicals().await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(radicals))
+}
+
+pub async fn get_key_radical_by_key(
+    Path(key_char): Path<String>,
+    State(state): State<AppState>,
+) -> Result<Json<crate::config::KeyRadical>, StatusCode> {
+    let result = state.db.get_key_radical_by_key(&key_char).await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    match result {
+        Some(radical) => Ok(Json(radical)),
+        None => Err(StatusCode::NOT_FOUND),
+    }
+}
+
+pub async fn get_english_texts(State(state): State<AppState>) -> Result<Json<Vec<crate::config::EnglishText>>, StatusCode> {
+    let texts = state.db.get_english_texts().await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(texts))
 }
 
 /// Generate JWT token for user.

@@ -79,7 +79,7 @@
         <a-alert
           v-if="currentWubiCode"
           :message="`当前字符: ${currentCharacter}`"
-          :description="`五笔编码: ${currentWubiCode.wubi_code}`"
+          :description="`五笔编码: ${currentWubiCode.full_code}`"
           type="info"
           show-icon
           style="margin-bottom: 16px;"
@@ -102,8 +102,19 @@
 
       <!-- 输入区域 -->
       <div class="input-section">
+        <!-- 自动演示显示框 -->
+        <div v-if="practiceMode === 'auto'" class="auto-display">
+          <a-textarea
+            v-model:value="userInput"
+            placeholder="自动演示中..."
+            :auto-size="{ minRows: 4, maxRows: 6 }"
+            disabled
+            style="margin-bottom: 16px;"
+          />
+        </div>
+        
+        <!-- 手动输入框 -->
         <a-textarea
-          v-if="practiceMode === 'manual'"
           v-model:value="userInput"
           placeholder="请在此输入文字进行练习..."
           :auto-size="{ minRows: 4, maxRows: 6 }"
@@ -111,16 +122,10 @@
           @input="handleUserInput"
           style="margin-top: 16px;"
         />
-        <div v-else class="auto-display">
-          <a-textarea
-            v-model:value="userInput"
-            placeholder="自动演示中..."
-            :auto-size="{ minRows: 4, maxRows: 6 }"
-            disabled
-            style="margin-top: 16px;"
-          />
-        </div>
       </div>
+      
+      <!-- 虚拟键盘指法提示 -->
+      <VirtualKeyboard :activeKey="currentActiveKey" :wubiCode="currentWubiCode?.full_code" :codeIndex="wubiCodeIndex" />
       
       <!-- 控制按钮 -->
       <div class="control-buttons">
@@ -181,11 +186,13 @@
 <script>
 import axios from 'axios';
 import WubiGraph from './WubiGraph.vue';
+import VirtualKeyboard from './VirtualKeyboard.vue';
 
 export default {
   name: 'WubiTypingPractice',
   components: {
-    WubiGraph
+    WubiGraph,
+    VirtualKeyboard
   },
   data() {
     return {
@@ -193,6 +200,7 @@ export default {
       currentArticle: null,
       selectedArticleId: null,
       userInput: '',
+      wubiInput: '', // 用于存储五笔编码输入
       startTime: null,
       elapsedTime: 0,
       timer: null,
@@ -204,6 +212,8 @@ export default {
       wubiCodeCache: {},
       isLoadingWubiCode: false,
       wubiCodeError: null,
+      wubiLetterCount: 0,
+      lastCharStartPosition: 0,
       // 自动打字相关
       practiceMode: 'manual', // 'manual' 或 'auto'
       typingSpeed: 250, // 毫秒
@@ -240,6 +250,24 @@ export default {
       const char = this.currentArticle.content[this.currentCharIndex];
       const isChineseChar = /[\u4e00-\u9fa5]/.test(char);
       return isChineseChar ? char : null;
+    },
+    wubiCodeIndex() {
+      return this.wubiLetterCount;
+    },
+    currentActiveKey() {
+      if (this.currentWubiCode && this.currentWubiCode.full_code && this.wubiLetterCount < this.currentWubiCode.full_code.length) {
+        return this.currentWubiCode.full_code[this.wubiLetterCount];
+      }
+      
+      if (!this.currentArticle || !this.currentArticle.content.length) return null;
+      if (this.currentCharIndex >= this.currentArticle.content.length) return null;
+      
+      const char = this.currentArticle.content[this.currentCharIndex];
+      if (/[\u4e00-\u9fa5]/.test(char)) {
+        return null;
+      }
+      
+      return char.toLowerCase();
     }
   },
   watch: {
@@ -249,6 +277,16 @@ export default {
   },
   async mounted() {
     await this.loadData();
+    window.addEventListener('keydown', this.handleGlobalKeyDown);
+  },
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.handleGlobalKeyDown);
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
+    if (this.autoTimer) {
+      clearTimeout(this.autoTimer);
+    }
   },
   methods: {
     async loadData() {
@@ -265,8 +303,18 @@ export default {
           })
         ]);
         
-        this.articles = articlesRes.data;
-        this.wubiRoots = wubiRootsRes.data;
+        console.log('API响应 - 文章:', articlesRes.data);
+        console.log('API响应 - 字根:', wubiRootsRes.data);
+        
+        // axios 响应拦截器可能修改了data，确保获取正确的数据
+        const articlesData = articlesRes.data || articlesRes;
+        const wubiRootsData = wubiRootsRes.data || wubiRootsRes;
+        
+        // 如果返回的数据在data属性中（axios标准格式）
+        this.articles = Array.isArray(articlesData) ? articlesData : (articlesData.data || []);
+        this.wubiRoots = Array.isArray(wubiRootsData) ? wubiRootsData : (wubiRootsData.data || []);
+        
+        console.log('处理后的文章数据:', this.articles);
         
         if (this.articles.length > 0) {
           this.selectedArticleId = this.articles[0].id;
@@ -293,9 +341,12 @@ export default {
     },
     resetPractice() {
       this.userInput = '';
+      this.wubiInput = '';
       this.currentCharIndex = 0;
       this.currentWubiCode = null;
       this.wubiCodeError = null;
+      this.wubiLetterCount = 0;
+      this.lastCharStartPosition = 0;
       if (this.timer) {
         clearInterval(this.timer);
         this.timer = null;
@@ -333,19 +384,38 @@ export default {
       }
     },
     handleUserInput() {
-      // 更新当前光标位置为用户输入长度
       this.currentCharIndex = this.userInput.length;
 
-      // 如果当前字符存在且是汉字，获取其五笔编码
       if (this.currentCharacter) {
+        const typedSinceCurrent = this.wubiInput.length;
+        if (this.currentWubiCode && this.currentWubiCode.full_code) {
+          const codeLen = this.currentWubiCode.full_code.length;
+          this.wubiLetterCount = Math.min(typedSinceCurrent, codeLen);
+          if (typedSinceCurrent >= codeLen) {
+            // 编码输入完成，检查是否正确
+            if (this.wubiInput === this.currentWubiCode.full_code) {
+              // 编码正确，添加汉字到输入框
+              this.userInput += this.currentCharacter;
+              this.wubiInput = '';
+              this.lastCharStartPosition = this.userInput.length;
+              this.wubiLetterCount = 0;
+            } else {
+              // 编码错误，重置输入
+              this.wubiInput = '';
+              this.wubiLetterCount = 0;
+            }
+          }
+        } else {
+          this.wubiLetterCount = 0;
+        }
         this.fetchWubiCodeForCurrentChar();
       } else {
-        // 如果没有当前字符或不是汉字，清空提示
         this.currentWubiCode = null;
         this.wubiCodeError = null;
         this.isLoadingWubiCode = false;
+        this.wubiLetterCount = 0;
+        this.wubiInput = '';
 
-        // 如果当前字符存在但不是汉字，显示提示
         if (this.currentCharIndex < this.currentArticle.content.length) {
           const char = this.currentArticle.content[this.currentCharIndex];
           if (char.trim() && !/[\u4e00-\u9fa5]/.test(char)) {
@@ -357,30 +427,34 @@ export default {
     async fetchWubiCodeForCurrentChar() {
       const char = this.currentCharacter;
 
-      // 检查缓存
       if (this.wubiCodeCache[char]) {
         this.currentWubiCode = this.wubiCodeCache[char];
         this.wubiCodeError = null;
+        const codeLen = this.currentWubiCode.full_code.length;
+        const typedSinceCurrent = this.wubiInput.length;
+        this.wubiLetterCount = Math.min(typedSinceCurrent, codeLen);
+        if (typedSinceCurrent >= codeLen) {
+          this.lastCharStartPosition = this.userInput.length;
+          this.wubiLetterCount = 0;
+        }
         return;
       }
 
-      // 重置状态
       this.currentWubiCode = null;
       this.wubiCodeError = null;
       this.isLoadingWubiCode = true;
+      this.wubiLetterCount = 0;
 
       try {
         const response = await axios.get(`/api/wubi/${encodeURIComponent(char)}`);
         const wubiData = response.data;
 
-        // 缓存结果
         this.wubiCodeCache[char] = wubiData;
         this.currentWubiCode = wubiData;
         this.wubiCodeError = null;
       } catch (error) {
         console.error(`获取"${char}"的五笔编码失败:`, error);
 
-        // 处理不同的错误情况
         if (error.response && error.response.status === 404) {
           this.wubiCodeError = `未找到"${char}"的五笔编码`;
         } else if (error.response && error.response.status === 400) {
@@ -511,16 +585,41 @@ export default {
       // 这里初始化G6图表，展示字根关系
       // 由于G6需要复杂的配置，这里仅做初始化
       console.log('初始化G6字根关系图');
+    },
+    handleGlobalKeyDown(event) {
+      if (this.practiceMode === 'manual' && this.currentArticle) {
+        const char = event.key;
+        if (char === 'Backspace') {
+          event.preventDefault();
+          if (this.wubiInput.length > 0) {
+            this.wubiInput = this.wubiInput.slice(0, -1);
+            this.handleUserInput();
+          } else if (this.userInput.length > 0) {
+            this.userInput = this.userInput.slice(0, -1);
+            this.currentCharIndex = this.userInput.length;
+            this.handleUserInput();
+          }
+          return;
+        }
+        if (char.length === 1 || char === ' ') {
+          event.preventDefault();
+          if (this.currentCharacter) {
+            // 对于汉字，输入到wubiInput
+            if (/[a-zA-Z]/.test(char)) {
+              this.wubiInput += char.toLowerCase();
+            }
+          } else {
+            // 对于非汉字，直接输入到userInput
+            this.userInput += char === ' ' ? ' ' : char;
+          }
+          this.handleUserInput();
+          if (!this.startTime) {
+            this.startTypingPractice();
+          }
+        }
+      }
     }
   },
-  beforeUnmount() {
-    if (this.timer) {
-      clearInterval(this.timer);
-    }
-    if (this.autoTimer) {
-      clearTimeout(this.autoTimer);
-    }
-  }
 };
 </script>
 

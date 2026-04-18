@@ -13,6 +13,12 @@
           <a-tab-pane key="1" tab="五笔打字练习">
             <WubiTypingPractice />
           </a-tab-pane>
+          <a-tab-pane key="3" tab="英语打字练习">
+            <EnglishTypingPractice />
+          </a-tab-pane>
+          <a-tab-pane key="4" tab="拼音打字练习">
+            <PinyinTypingPractice />
+          </a-tab-pane>
           <a-tab-pane key="2" tab="汉字五笔查询">
             <WubiLookup />
           </a-tab-pane>
@@ -32,6 +38,8 @@ import { useRouter } from 'vue-router';
 import { logout } from '../api';
 import WubiTypingPractice from './WubiTypingPractice.vue';
 import WubiLookup from './WubiLookup.vue';
+import EnglishTypingPractice from './EnglishTypingPractice.vue';
+import PinyinTypingPractice from './PinyinTypingPractice.vue';
 
 const router = useRouter();
 const user = ref(null);
