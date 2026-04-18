@@ -20,6 +20,26 @@
         </a-row>
       </div>
       
+      <!-- 模式选择和速度控制 -->
+      <div class="mode-control">
+        <a-space>
+          <span>练习模式：</span>
+          <a-radio-group v-model:value="practiceMode">
+            <a-radio-button value="manual">手动练习</a-radio-button>
+            <a-radio-button value="auto">自动演示</a-radio-button>
+          </a-radio-group>
+        </a-space>
+        
+        <a-space v-if="practiceMode === 'auto'" style="margin-top: 12px;">
+          <span>打字速度：</span>
+          <a-select v-model:value="typingSpeed" style="width: 120px;">
+            <a-select-option :value="500">慢速</a-select-option>
+            <a-select-option :value="250">正常</a-select-option>
+            <a-select-option :value="100">快速</a-select-option>
+          </a-select>
+        </a-space>
+      </div>
+
       <!-- 文章选择 -->
       <div class="article-selection">
         <a-select 
@@ -83,6 +103,7 @@
       <!-- 输入区域 -->
       <div class="input-section">
         <a-textarea
+          v-if="practiceMode === 'manual'"
           v-model:value="userInput"
           placeholder="请在此输入文字进行练习..."
           :auto-size="{ minRows: 4, maxRows: 6 }"
@@ -90,13 +111,45 @@
           @input="handleUserInput"
           style="margin-top: 16px;"
         />
+        <div v-else class="auto-display">
+          <a-textarea
+            v-model:value="userInput"
+            placeholder="自动演示中..."
+            :auto-size="{ minRows: 4, maxRows: 6 }"
+            disabled
+            style="margin-top: 16px;"
+          />
+        </div>
       </div>
       
       <!-- 控制按钮 -->
       <div class="control-buttons">
-        <a-button @click="resetPractice" type="primary" danger>
-          重新开始
-        </a-button>
+        <a-space>
+          <a-button @click="resetPractice" type="primary" danger>
+            重新开始
+          </a-button>
+          <a-button 
+            v-if="practiceMode === 'auto' && !isAutoTyping" 
+            @click="startAutoTyping" 
+            type="primary"
+          >
+            开始演示
+          </a-button>
+          <a-button 
+            v-if="practiceMode === 'auto' && isAutoTyping" 
+            @click="pauseAutoTyping" 
+            type="primary"
+          >
+            暂停
+          </a-button>
+          <a-button 
+            v-if="practiceMode === 'auto' && isAutoTyping" 
+            @click="resumeAutoTyping" 
+            type="primary"
+          >
+            继续
+          </a-button>
+        </a-space>
       </div>
     </a-card>
     
@@ -145,12 +198,18 @@ export default {
       timer: null,
       searchCharacter: '',
       searchResult: null,
-      wubiRoots: [], // 添加wubiRoots数据
-      currentCharIndex: 0, // 当前光标位置
-      currentWubiCode: null, // 当前字符的五笔编码
-      wubiCodeCache: {}, // 五笔编码缓存
-      isLoadingWubiCode: false, // 是否正在加载五笔编码
-      wubiCodeError: null // 五笔编码错误信息
+      wubiRoots: [],
+      currentCharIndex: 0,
+      currentWubiCode: null,
+      wubiCodeCache: {},
+      isLoadingWubiCode: false,
+      wubiCodeError: null,
+      // 自动打字相关
+      practiceMode: 'manual', // 'manual' 或 'auto'
+      typingSpeed: 250, // 毫秒
+      isAutoTyping: false,
+      isPaused: false,
+      autoTimer: null
     };
   },
   computed: {
@@ -170,7 +229,7 @@ export default {
     },
     speed() {
       if (!this.startTime || this.elapsedTime === 0 || !this.currentArticle) return 0;
-      const minutes = this.elapsedTime / 60000; // Convert ms to minutes
+      const minutes = this.elapsedTime / 60000;
       const charsTyped = this.userInput.length;
       return (charsTyped / minutes).toFixed(2);
     },
@@ -179,12 +238,13 @@ export default {
       if (this.currentCharIndex >= this.currentArticle.content.length) return null;
 
       const char = this.currentArticle.content[this.currentCharIndex];
-
-      // 检查字符是否是汉字（基本汉字范围）
       const isChineseChar = /[\u4e00-\u9fa5]/.test(char);
-
-      // 如果不是汉字，返回null，这样不会尝试获取五笔编码
       return isChineseChar ? char : null;
+    }
+  },
+  watch: {
+    practiceMode() {
+      this.resetPractice();
     }
   },
   async mounted() {
@@ -240,8 +300,14 @@ export default {
         clearInterval(this.timer);
         this.timer = null;
       }
+      if (this.autoTimer) {
+        clearTimeout(this.autoTimer);
+        this.autoTimer = null;
+      }
       this.startTime = null;
       this.elapsedTime = 0;
+      this.isAutoTyping = false;
+      this.isPaused = false;
     },
     getCharClass(index) {
       const classes = ['char'];
@@ -328,6 +394,54 @@ export default {
         this.isLoadingWubiCode = false;
       }
     },
+    startAutoTyping() {
+      if (!this.currentArticle || !this.currentArticle.content) return;
+      
+      this.isAutoTyping = true;
+      this.isPaused = false;
+      this.startTime = Date.now();
+      this.timer = setInterval(() => {
+        this.elapsedTime = Date.now() - this.startTime;
+      }, 1000);
+      
+      this.typeNextChar();
+    },
+    typeNextChar() {
+      if (!this.currentArticle || this.isPaused) return;
+      
+      const content = this.currentArticle.content;
+      if (this.userInput.length >= content.length) {
+        this.isAutoTyping = false;
+        if (this.timer) {
+          clearInterval(this.timer);
+          this.timer = null;
+        }
+        return;
+      }
+      
+      const nextChar = content[this.userInput.length];
+      this.userInput += nextChar;
+      this.currentCharIndex = this.userInput.length;
+      
+      // 更新五笔编码提示
+      this.handleUserInput();
+      
+      // 根据速度设置，延迟输入下一个字符
+      this.autoTimer = setTimeout(() => {
+        this.typeNextChar();
+      }, this.typingSpeed);
+    },
+    pauseAutoTyping() {
+      this.isPaused = true;
+      if (this.autoTimer) {
+        clearTimeout(this.autoTimer);
+        this.autoTimer = null;
+      }
+    },
+    resumeAutoTyping() {
+      this.isPaused = false;
+      this.typeNextChar();
+    },
     handleCharClick(index) {
       // 如果点击的位置在当前输入长度之前，直接显示该字符的五笔编码
       if (index < this.currentArticle.content.length) {
@@ -403,6 +517,9 @@ export default {
     if (this.timer) {
       clearInterval(this.timer);
     }
+    if (this.autoTimer) {
+      clearTimeout(this.autoTimer);
+    }
   }
 };
 </script>
@@ -424,6 +541,17 @@ export default {
 
 .stats-container {
   margin-bottom: 20px;
+}
+
+.mode-control {
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: #f0f5ff;
+  border-radius: 4px;
+}
+
+.auto-display {
+  margin-top: 16px;
 }
 
 .original-text {

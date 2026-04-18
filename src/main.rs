@@ -22,6 +22,8 @@
 
 pub mod app;
 pub mod wubi;
+pub mod config;
+pub mod db;
 
 /// See file book.rs, which defines the `Book` struct.
 mod book;
@@ -47,23 +49,20 @@ async fn main() {
         .init();
     tracing::event!(tracing::Level::INFO, "main");
 
-    // Load environment variables from .env file
-    dotenvy::dotenv().ok();
+    // Load configuration from config.yaml
+    let config = crate::config::AppConfig::from_file("config.yaml")
+        .expect("failed to load config.yaml");
+    
+    println!("Database type: {}", config.get_db_type());
+    println!("Server address: {}", config.server_address());
 
-    // Get command line arguments.
-    let args: Vec<String> = std::env::args().skip(1).collect();
-
-    // Use the first arg for tokio::net::TcpListener::bind(…)  
-    let bind_address = match args.get(0) {
-        Some(x) => x.clone(),
-        None => "0.0.0.0:3000".into(),
-    };
-
-    // Create our database connection pool and initialize the schema.
-    let database_url = crate::wubi::default_database_url();
+    // Create MySQL connection pool
+    let database_url = config.get_database_url();
     let pool = MySqlPool::connect(&database_url)
         .await
         .expect("failed to connect to MySQL database");
+    
+    // Initialize database schema
     crate::wubi::init_db(&pool)
         .await
         .expect("failed to initialize database schema");
@@ -82,7 +81,8 @@ async fn main() {
     let app = app.layer(cors);
 
     // Run our app using a hyper server.
-    let listener = tokio::net::TcpListener::bind(bind_address).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(config.server_address()).await.unwrap();
+    println!("Server listening on {}", config.server_address());
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await

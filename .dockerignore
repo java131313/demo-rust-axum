@@ -1,0 +1,33 @@
+# Rust构建产物
+/target
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# IDE和编辑器
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# 日志文件
+*.log
+
+# 前端相关
+frontend/node_modules
+frontend/dist
+frontend/.vite
+
+# Git
+.git
+.gitignore
+
+# 文档
+*.md
+docs/
+
+# 测试
+tests/
+examples/
