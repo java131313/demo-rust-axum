@@ -19,6 +19,9 @@
           <a-tab-pane key="4" tab="拼音打字练习">
             <PinyinTypingPractice />
           </a-tab-pane>
+          <a-tab-pane key="5" tab="字根键盘与口诀">
+            <WubiRootKeyboard />
+          </a-tab-pane>
           <a-tab-pane key="2" tab="汉字五笔查询">
             <WubiLookup />
           </a-tab-pane>
@@ -40,6 +43,7 @@ import WubiTypingPractice from './WubiTypingPractice.vue';
 import WubiLookup from './WubiLookup.vue';
 import EnglishTypingPractice from './EnglishTypingPractice.vue';
 import PinyinTypingPractice from './PinyinTypingPractice.vue';
+import WubiRootKeyboard from './WubiRootKeyboard.vue';
 
 const router = useRouter();
 const user = ref(null);
