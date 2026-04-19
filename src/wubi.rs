@@ -54,16 +54,6 @@ fn load_wubi_dict() -> Vec<WubiDictEntry> {
     }
 }
 
-/// A user record.
-#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
-pub struct User {
-    pub id: i32,
-    pub username: String,
-    pub email: String,
-    pub password_hash: String,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-}
-
 /// Input payload for user login.
 #[derive(Debug, Deserialize)]
 pub struct LoginRequest {

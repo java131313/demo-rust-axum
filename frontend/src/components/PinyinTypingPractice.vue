@@ -311,17 +311,16 @@ export default {
       this.isLoadingPinyin = true;
 
       try {
-        // 使用公开的拼音API
-        const response = await axios.get(`https://api.example.com/pinyin?char=${encodeURIComponent(char)}`);
-        const pinyinData = response.data;
+        const response = await axios.get(`/api/wubi/${encodeURIComponent(char)}`);
+        const wubiData = response.data;
+        const pinyin = wubiData.pinyin || wubiData.simple_pinyin;
 
-        this.pinyinCache[char] = pinyinData.pinyin;
-        this.currentPinyin = pinyinData.pinyin;
+        this.pinyinCache[char] = pinyin || '未知';
+        this.currentPinyin = pinyin || '未知';
         this.pinyinError = null;
       } catch (error) {
         console.error(`获取"${char}"的拼音失败:`, error);
-        
-        // 模拟拼音数据
+
         this.pinyinCache[char] = this.getMockPinyin(char);
         this.currentPinyin = this.pinyinCache[char];
         this.pinyinError = null;
@@ -330,7 +329,6 @@ export default {
       }
     },
     getMockPinyin(char) {
-      // 简单的模拟拼音数据
       const pinyinMap = {
         '你': 'ni',
         '好': 'hao',
@@ -437,18 +435,16 @@ export default {
       this.isLoadingPinyin = true;
 
       try {
-        // 使用公开的拼音API
-        const response = await axios.get(`https://api.example.com/pinyin?char=${encodeURIComponent(char)}`);
-        const pinyinData = response.data;
+        const response = await axios.get(`/api/wubi/${encodeURIComponent(char)}`);
+        const wubiData = response.data;
+        const pinyin = wubiData.pinyin || wubiData.simple_pinyin;
 
-        // 缓存结果
-        this.pinyinCache[char] = pinyinData.pinyin;
-        this.currentPinyin = pinyinData.pinyin;
+        this.pinyinCache[char] = pinyin || '未知';
+        this.currentPinyin = pinyin || '未知';
         this.pinyinError = null;
       } catch (error) {
         console.error(`获取"${char}"的拼音失败:`, error);
-        
-        // 模拟拼音数据
+
         this.pinyinCache[char] = this.getMockPinyin(char);
         this.currentPinyin = this.pinyinCache[char];
         this.pinyinError = null;
