@@ -6,8 +6,7 @@ server:
 
 database:
   # 数据库类型: "mysql" 或 "postgres" 或 "redis" 或 "mongo"
-  # 使用postgres，生产环境推荐
-  type: "postgres"
+  type: "mysql"
   
   # MySQL配置
   mysql:
@@ -15,7 +14,7 @@ database:
     port: 3306
     username: "root"
     password: "sdsSDG123*^DD"
-    database: "wubi"
+    database: "wubi_demo_pg"
     max_connections: 10
     
   # PostgreSQL配置（生产环境使用）
