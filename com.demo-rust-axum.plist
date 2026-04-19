@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.demo-rust-axum</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/kangxiaoyu/program/demo-rust-axum/target/release/demo-rust-axum</string>
+    </array>
+    
+    <key>WorkingDirectory</key>
+    <string>/Users/kangxiaoyu/program/demo-rust-axum</string>
+    
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <key>KeepAlive</key>
+    <true/>
+    
+    <key>StandardOutPath</key>
+    <string>/Users/kangxiaoyu/program/demo-rust-axum/logs/service.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/Users/kangxiaoyu/program/demo-rust-axum/logs/service-error.log</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>RUST_LOG</key>
+        <string>info</string>
+    </dict>
+</dict>
+</plist>
