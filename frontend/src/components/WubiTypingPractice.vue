@@ -169,11 +169,15 @@
         />
       </div>
       
-      <div v-if="searchResult" class="search-result">
+      <div v-if="searchError" class="search-result">
+        <a-alert message="无法查询" type="warning" :description="searchError" show-icon />
+      </div>
+      <div v-else-if="searchResult" class="search-result">
         <a-alert
           message="查询结果"
           type="info"
-          :description="`${searchResult.character}: ${searchResult.code} (${searchResult.position}) - ${searchResult.description}`"
+          :description="wubiSearchResultDescription"
+          show-icon
         />
       </div>
       
@@ -206,6 +210,7 @@ export default {
       timer: null,
       searchCharacter: '',
       searchResult: null,
+      searchError: null,
       wubiRoots: [],
       currentCharIndex: 0,
       currentWubiCode: null,
@@ -268,11 +273,29 @@ export default {
       }
       
       return char.toLowerCase();
+    },
+    wubiSearchResultDescription() {
+      if (!this.searchResult) return '';
+      const r = this.searchResult;
+      const parts = [
+        `汉字：${r.character}`,
+        `全码：${r.full_code || '—'}`,
+        `简码：${r.simple_code || '—'}`,
+      ];
+      if (r.pinyin) parts.push(`拼音：${r.pinyin}`);
+      if (r.remark) parts.push(`备注：${r.remark}`);
+      return parts.join('；');
     }
   },
   watch: {
     practiceMode() {
       this.resetPractice();
+    },
+    searchCharacter(val) {
+      if (!val || !String(val).trim()) {
+        this.searchResult = null;
+        this.searchError = null;
+      }
     }
   },
   async mounted() {
@@ -370,17 +393,40 @@ export default {
       return classes.join(' ');
     },
     async searchWubiRoot(value) {
-      if (!value.trim()) {
+      const raw = typeof value === 'string' ? value : this.searchCharacter;
+      const trimmed = raw.trim();
+      this.searchError = null;
+      if (!trimmed) {
         this.searchResult = null;
         return;
       }
 
+      const chars = [...trimmed];
+      if (chars.length !== 1) {
+        this.searchResult = null;
+        this.searchError = '请只输入一个汉字再查询。';
+        return;
+      }
+      const char = chars[0];
+      if (!/[\u4e00-\u9fff]/.test(char)) {
+        this.searchResult = null;
+        this.searchError = '请输入汉字。';
+        return;
+      }
+
       try {
-        const response = await axios.get(`/api/search-wubi-root/${encodeURIComponent(value)}`);
+        const response = await axios.get(`/api/wubi/${encodeURIComponent(char)}`);
         this.searchResult = response.data;
       } catch (error) {
-        console.error('搜索字根失败:', error);
+        console.error('查询五笔编码失败:', error);
         this.searchResult = null;
+        if (error.response?.status === 404) {
+          this.searchError = `词库中未找到「${char}」的五笔编码。`;
+        } else if (error.response?.status === 400) {
+          this.searchError = '请求无效，请确认输入的是单个汉字。';
+        } else {
+          this.searchError = error.message || '查询失败，请稍后重试。';
+        }
       }
     },
     handleUserInput() {
@@ -587,6 +633,16 @@ export default {
       console.log('初始化G6字根关系图');
     },
     handleGlobalKeyDown(event) {
+      const t = event.target;
+      if (
+        t instanceof HTMLElement &&
+        (t.tagName === 'INPUT' ||
+          t.tagName === 'TEXTAREA' ||
+          t.tagName === 'SELECT' ||
+          t.isContentEditable)
+      ) {
+        return;
+      }
       if (this.practiceMode === 'manual' && this.currentArticle) {
         const char = event.key;
         if (char === 'Backspace') {

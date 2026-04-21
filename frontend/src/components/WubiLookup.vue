@@ -4,7 +4,8 @@
     <a-button type="primary" @click="lookupWubi">查询</a-button>
     <div v-if="result">
       <p>汉字: {{ result.character }}</p>
-      <p>五笔编码: {{ result.wubi_code }}</p>
+      <p>全码: {{ result.full_code }}</p>
+      <p v-if="result.simple_code">简码: {{ result.simple_code }}</p>
     </div>
   </div>
 </template>

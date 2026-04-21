@@ -314,6 +314,17 @@ export default {
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     },
     handleGlobalKeyDown(event) {
+      if (event.isComposing) return;
+      const t = event.target;
+      if (
+        t instanceof HTMLElement &&
+        (t.tagName === 'INPUT' ||
+          t.tagName === 'TEXTAREA' ||
+          t.tagName === 'SELECT' ||
+          t.isContentEditable)
+      ) {
+        return;
+      }
       if (this.practiceMode === 'manual' && this.currentText) {
         const char = event.key;
         if (char === 'Backspace') {
