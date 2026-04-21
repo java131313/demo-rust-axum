@@ -5,7 +5,10 @@
         <span>五笔字根键盘图</span>
       </template>
 
-      <!-- 字根键盘布局 -->
+      <a-spin v-if="loading" tip="正在加载字根数据..." />
+      <a-result v-else-if="error" status="error" :title="error" />
+
+      <template v-else>
       <div class="keyboard-layout">
         <!-- 区号标题行 -->
         <div class="zone-header-row">
@@ -50,6 +53,7 @@
           <p><strong>主要字根：</strong>{{ selectedKeyInfo.radicals }}</p>
         </div>
       </a-card>
+      </template>
     </a-card>
 
     <!-- 字根口诀卡片 -->
@@ -116,6 +120,8 @@
 </template>
 
 <script>
+const API_BASE = 'http://localhost:3000';
+
 export default {
   name: 'WubiRootKeyboard',
   data() {
@@ -125,33 +131,9 @@ export default {
       tooltipVisible: false,
       tooltipStyle: {},
       tooltipData: {},
-      keyRadicals: [
-        { key: 'g', code: '11', formula: '王旁青头戋（兼）五一', radicals: '王、一、五、戋' },
-        { key: 'f', code: '12', formula: '土士二干十寸雨', radicals: '土、士、二、干、十、寸、雨' },
-        { key: 'd', code: '13', formula: '大犬三（古）石厂', radicals: '大、犬、三、古、石、厂' },
-        { key: 's', code: '14', formula: '木丁西', radicals: '木、丁、西' },
-        { key: 'a', code: '15', formula: '工戈草头右框七', radicals: '工、戈、艹、七、廿' },
-        { key: 'h', code: '21', formula: '目具上止卜虎皮', radicals: '目、止、卜、虍、上' },
-        { key: 'j', code: '22', formula: '日早两竖与虫依', radicals: '日、早、虫、刂、竖' },
-        { key: 'k', code: '23', formula: '口与川，字根稀', radicals: '口、川' },
-        { key: 'l', code: '24', formula: '田甲方框四车里', radicals: '田、甲、四、车、囗' },
-        { key: 'm', code: '25', formula: '山由贝，下框几', radicals: '山、由、贝、几' },
-        { key: 't', code: '31', formula: '禾竹一撇双人立', radicals: '禾、竹、丿、彳、攵' },
-        { key: 'r', code: '32', formula: '白手看头三二斤', radicals: '白、手、斤、牛' },
-        { key: 'e', code: '33', formula: '舟用乃月豕（家）衣', radicals: '舟、用、月、豕、衣' },
-        { key: 'w', code: '34', formula: '人八登头单人几', radicals: '人、八、亻' },
-        { key: 'q', code: '35', formula: '金勺缺点无尾鱼，犬旁留叉', radicals: '金、饣、勹、儿、夕' },
-        { key: 'y', code: '41', formula: '言文方广在四一，高头一捺谁人去', radicals: '言、文、方、广、丶' },
-        { key: 'u', code: '42', formula: '立辛两点六门疒（病）', radicals: '立、辛、六、门、疒' },
-        { key: 'i', code: '43', formula: '水旁兴头小倒立', radicals: '氵（三点水）、小' },
-        { key: 'o', code: '44', formula: '火业头，四点米', radicals: '火、米、灬' },
-        { key: 'p', code: '45', formula: '之字军盖建道底，摘礻衤', radicals: '之、宀（宝盖）、冖、礻、衤' },
-        { key: 'n', code: '51', formula: '已半巳满不出己，左框折尸心和羽', radicals: '已、己、巳、尸、心、羽' },
-        { key: 'b', code: '52', formula: '子耳了也框向上', radicals: '子、耳、了、也、卩' },
-        { key: 'v', code: '53', formula: '女刀九臼山朝西', radicals: '女、刀、九、臼' },
-        { key: 'c', code: '54', formula: '又巴马，丢矢矣', radicals: '又、巴、马、厶' },
-        { key: 'x', code: '55', formula: '慈母无心弓和匕，幼无力', radicals: '幺、母、弓、匕' },
-      ],
+      loading: true,
+      error: null,
+      keyRadicals: [],
       keyboardLayout: [
         { position: '1', keys: ['g', 'h', 't', 'y', 'n'] },
         { position: '2', keys: ['f', 'j', 'r', 'u', 'b'] },
@@ -160,6 +142,9 @@ export default {
         { position: '5', keys: ['a', 'm', 'q', 'p', 'x'] },
       ]
     };
+  },
+  mounted() {
+    this.fetchKeyRadicals();
   },
   computed: {
     keyboardRows() {
@@ -196,6 +181,26 @@ export default {
     }
   },
   methods: {
+    async fetchKeyRadicals() {
+      try {
+        const response = await fetch(`${API_BASE}/api/key-radicals`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        this.keyRadicals = data.map(item => ({
+          key: item.key_char,
+          code: item.id.toString().padStart(2, '0'),
+          formula: item.formula,
+          radicals: item.radicals
+        }));
+        this.loading = false;
+      } catch (err) {
+        console.error('获取字根数据失败:', err);
+        this.error = '加载失败：' + err.message;
+        this.loading = false;
+      }
+    },
     showTooltip(key) {
       this.hoverKey = key;
       const data = this.keyRadicals.find(r => r.key === key);

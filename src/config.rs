@@ -185,5 +185,6 @@ pub struct KeyRadical {
     pub id: i32,
     pub key_char: String,
     pub radicals: String,
+    pub formula: String,
     pub description: String,
 }

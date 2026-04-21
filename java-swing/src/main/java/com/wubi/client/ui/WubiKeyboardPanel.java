@@ -1,11 +1,17 @@
 package com.wubi.client.ui;
 
+import com.wubi.client.api.WubiApiClient;
+import com.wubi.client.model.KeyRadical;
+
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class WubiKeyboardPanel extends JPanel {
 
     private JTextArea formulaArea;
+    private List<KeyRadical> keyRadicals;
 
     private final String[][] KEYBOARD_LAYOUT = {
         {"G", "H", "T", "Y", "N"},
@@ -24,37 +30,66 @@ public class WubiKeyboardPanel extends JPanel {
         new Color(168, 85, 247)
     };
 
-    private final KeyRadicalData[] KEY_RADICALS = {
-        new KeyRadicalData("g", "11", "王旁青头戋（兼）五一", "王、一、五、戋"),
-        new KeyRadicalData("f", "12", "土士二干十寸雨", "土、士、二、干、十、寸、雨"),
-        new KeyRadicalData("d", "13", "大犬三（古）石厂", "大、犬、三、古、石、厂"),
-        new KeyRadicalData("s", "14", "木丁西", "木、丁、西"),
-        new KeyRadicalData("a", "15", "工戈草头右框七", "工、戈、艹、七、廿"),
-        new KeyRadicalData("h", "21", "目具上止卜虎皮", "目、止、卜、虍、上"),
-        new KeyRadicalData("j", "22", "日早两竖与虫依", "日、早、虫、刂、竖"),
-        new KeyRadicalData("k", "23", "口与川，字根稀", "口、川"),
-        new KeyRadicalData("l", "24", "田甲方框四车里", "田、甲、四、车、囗"),
-        new KeyRadicalData("m", "25", "山由贝，下框几", "山、由、贝、几"),
-        new KeyRadicalData("t", "31", "禾竹一撇双人立", "禾、竹、丿、彳、攵"),
-        new KeyRadicalData("r", "32", "白手看头三二斤", "白、手、斤、牛"),
-        new KeyRadicalData("e", "33", "舟用乃月豕（家）衣", "舟、用、月、豕、衣"),
-        new KeyRadicalData("w", "34", "人八登头单人几", "人、八、亻"),
-        new KeyRadicalData("q", "35", "金勺缺点无尾鱼，犬旁留叉", "金、饣、勹、儿、夕"),
-        new KeyRadicalData("y", "41", "言文方广在四一，高头一捺谁人去", "言、文、方、广、丶"),
-        new KeyRadicalData("u", "42", "立辛两点六门疒（病）", "立、辛、六、门、疒"),
-        new KeyRadicalData("i", "43", "水旁兴头小倒立", "氵（三点水）、小"),
-        new KeyRadicalData("o", "44", "火业头，四点米", "火、米、灬"),
-        new KeyRadicalData("p", "45", "之字军盖建道底，摘礻衤", "之、宀（宝盖）、冖、礻、衤"),
-        new KeyRadicalData("n", "51", "已半巳满不出己，左框折尸心和羽", "已、己、巳、尸、心、羽"),
-        new KeyRadicalData("b", "52", "子耳了也框向上", "子、耳、了、也、卩"),
-        new KeyRadicalData("v", "53", "女刀九臼山朝西", "女、刀、九、臼"),
-        new KeyRadicalData("c", "54", "又巴马，丢矢矣", "又、巴、马、厶"),
-        new KeyRadicalData("x", "55", "慈母无心弓和匕，幼无力", "幺、母、弓、匕"),
-    };
-
     public WubiKeyboardPanel() {
         initComponents();
-        showAllFormulas();
+        loadKeyRadicals();
+    }
+
+    private void loadKeyRadicals() {
+        formulaArea.setText("正在从后端加载字根数据...");
+        new Thread(() -> {
+            try {
+                keyRadicals = WubiApiClient.getKeyRadicals();
+                SwingUtilities.invokeLater(this::showAllFormulas);
+            } catch (Exception e) {
+                SwingUtilities.invokeLater(() -> {
+                    formulaArea.setText("加载字根数据失败：" + e.getMessage() + "\n\n将使用本地默认数据。");
+                    // 加载本地默认数据作为后备
+                    loadDefaultKeyRadicals();
+                    showAllFormulas();
+                });
+            }
+        }).start();
+    }
+
+    private void loadDefaultKeyRadicals() {
+        // 本地默认数据作为后备
+        keyRadicals = new ArrayList<>();
+        keyRadicals.add(createKeyRadical(1, "g", "王、一、五、戋", "王旁青头戋（兼）五一", "G区横区第一键"));
+        keyRadicals.add(createKeyRadical(2, "f", "土、士、二、干、十、寸、雨", "土士二干十寸雨", "F区横区第二键"));
+        keyRadicals.add(createKeyRadical(3, "d", "大、犬、三、古、石、厂", "大犬三（古）石厂", "D区横区第三键"));
+        keyRadicals.add(createKeyRadical(4, "s", "木、丁、西", "木丁西", "S区横区第四键"));
+        keyRadicals.add(createKeyRadical(5, "a", "工、戈、艹、七、廿", "工戈草头右框七", "A区横区第五键"));
+        keyRadicals.add(createKeyRadical(6, "h", "目、止、卜、虍、上", "目具上止卜虎皮", "H区竖区第一键"));
+        keyRadicals.add(createKeyRadical(7, "j", "日、早、虫、刂、竖", "日早两竖与虫依", "J区竖区第二键"));
+        keyRadicals.add(createKeyRadical(8, "k", "口、川", "口与川，字根稀", "K区竖区第三键"));
+        keyRadicals.add(createKeyRadical(9, "l", "田、甲、四、车、囗", "田甲方框四车里", "L区竖区第四键"));
+        keyRadicals.add(createKeyRadical(10, "m", "山、由、贝、几", "山由贝，下框几", "M区竖区第五键"));
+        keyRadicals.add(createKeyRadical(11, "t", "禾、竹、丿、彳、攵", "禾竹一撇双人立", "T区撇区第一键"));
+        keyRadicals.add(createKeyRadical(12, "r", "白、手、斤、牛", "白手看头三二斤", "R区撇区第二键"));
+        keyRadicals.add(createKeyRadical(13, "e", "舟、用、月、豕、衣", "舟用乃月豕（家）衣", "E区撇区第三键"));
+        keyRadicals.add(createKeyRadical(14, "w", "人、八、亻", "人八登头单人几", "W区撇区第四键"));
+        keyRadicals.add(createKeyRadical(15, "q", "金、饣、勹、儿、夕", "金勺缺点无尾鱼，犬旁留叉", "Q区撇区第五键"));
+        keyRadicals.add(createKeyRadical(16, "y", "言、文、方、广、丶", "言文方广在四一，高头一捺谁人去", "Y区捺区第一键"));
+        keyRadicals.add(createKeyRadical(17, "u", "立、辛、六、门、疒", "立辛两点六门疒（病）", "U区捺区第二键"));
+        keyRadicals.add(createKeyRadical(18, "i", "氵（三点水）、小", "水旁兴头小倒立", "I区捺区第三键"));
+        keyRadicals.add(createKeyRadical(19, "o", "火、米、灬", "火业头，四点米", "O区捺区第四键"));
+        keyRadicals.add(createKeyRadical(20, "p", "之、宀（宝盖）、冖、礻、衤", "之字军盖建道底，摘礻衤", "P区捺区第五键"));
+        keyRadicals.add(createKeyRadical(21, "n", "已、己、巳、尸、心、羽", "已半巳满不出己，左框折尸心和羽", "N区折区第一键"));
+        keyRadicals.add(createKeyRadical(22, "b", "子、耳、了、也、卩", "子耳了也框向上", "B区折区第二键"));
+        keyRadicals.add(createKeyRadical(23, "v", "女、刀、九、臼", "女刀九臼山朝西", "V区折区第三键"));
+        keyRadicals.add(createKeyRadical(24, "c", "又、巴、马、厶", "又巴马，丢矢矣", "C区折区第四键"));
+        keyRadicals.add(createKeyRadical(25, "x", "幺、母、弓、匕", "慈母无心弓和匕，幼无力", "X区折区第五键"));
+    }
+
+    private KeyRadical createKeyRadical(int id, String keyChar, String radicals, String formula, String description) {
+        KeyRadical kr = new KeyRadical();
+        kr.setId(id);
+        kr.setKeyChar(keyChar);
+        kr.setRadicals(radicals);
+        kr.setFormula(formula);
+        kr.setDescription(description);
+        return kr;
     }
 
     private void initComponents() {
@@ -99,9 +134,10 @@ public class WubiKeyboardPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
-    private KeyRadicalData findByKey(String key) {
-        for (KeyRadicalData kr : KEY_RADICALS) {
-            if (kr.key.equalsIgnoreCase(key)) {
+    private KeyRadical findByKey(String key) {
+        if (keyRadicals == null) return null;
+        for (KeyRadical kr : keyRadicals) {
+            if (kr.getKeyChar().equalsIgnoreCase(key)) {
                 return kr;
             }
         }
@@ -109,25 +145,36 @@ public class WubiKeyboardPanel extends JPanel {
     }
 
     private void showKeyFormula(String key) {
-        KeyRadicalData kr = findByKey(key);
+        if (keyRadicals == null) {
+            formulaArea.setText("字根数据尚未加载，请稍后再试");
+            return;
+        }
+
+        KeyRadical kr = findByKey(key);
         if (kr == null) {
             formulaArea.setText("未找到键位 " + key + " 的字根信息");
             return;
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("=== ").append(key.toUpperCase()).append(" 键 (编码 ").append(kr.code).append(") ===\n\n");
-        sb.append("【口诀】").append(kr.formula).append("\n\n");
-        sb.append("【主要字根】").append(kr.radicals).append("\n\n");
+        sb.append("=== ").append(key.toUpperCase()).append(" 键 ===\n\n");
+        sb.append("【口诀】").append(kr.getFormula()).append("\n\n");
+        sb.append("【主要字根】").append(kr.getRadicals()).append("\n\n");
 
-        String keyChar = kr.formula.substring(0, 1);
+        String keyChar = kr.getFormula().substring(0, 1);
         sb.append("【键名字】").append(keyChar).append("\n\n");
         sb.append("【学习提示】键名字就是口诀第一个字\n");
+        sb.append("【说明】").append(kr.getDescription()).append("\n");
 
         formulaArea.setText(sb.toString());
     }
 
     private void showAllFormulas() {
+        if (keyRadicals == null) {
+            formulaArea.setText("字根数据尚未加载，请稍后再试");
+            return;
+        }
+
         StringBuilder sb = new StringBuilder();
         String[] zoneNames = {"第一区：横起笔 (G - A)", "第二区：竖起笔 (H - M)",
                               "第三区：撇起笔 (T - Q)", "第四区：捺/点起笔 (Y - P)",
@@ -139,10 +186,10 @@ public class WubiKeyboardPanel extends JPanel {
             sb.append("-".repeat(50)).append("\n");
 
             for (char c : zoneKeys[z].toCharArray()) {
-                KeyRadicalData kr = findByKey(String.valueOf(c));
+                KeyRadical kr = findByKey(String.valueOf(c));
                 if (kr != null) {
                     sb.append(String.format("  %s 键 | %s | 字根: %s\n",
-                        kr.key.toUpperCase(), kr.formula, kr.radicals));
+                        kr.getKeyChar().toUpperCase(), kr.getFormula(), kr.getRadicals()));
                 }
             }
             sb.append("\n");
@@ -155,19 +202,5 @@ public class WubiKeyboardPanel extends JPanel {
         sb.append("• 拆分原则：书写顺序、取大优先、兼顾直观、能连不交\n");
 
         formulaArea.setText(sb.toString());
-    }
-
-    private static class KeyRadicalData {
-        String key;
-        String code;
-        String formula;
-        String radicals;
-
-        KeyRadicalData(String key, String code, String formula, String radicals) {
-            this.key = key;
-            this.code = code;
-            this.formula = formula;
-            this.radicals = radicals;
-        }
     }
 }

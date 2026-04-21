@@ -205,6 +205,21 @@ impl Database for MySqlDatabase {
         .await
         .map_err(|e| e.to_string())?;
 
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS key_radicals (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                key_char VARCHAR(4) NOT NULL UNIQUE,
+                radicals TEXT NOT NULL,
+                formula TEXT,
+                description TEXT
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
         // 插入示例数据
         let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM lessons")
             .fetch_one(&self.pool)
@@ -224,6 +239,55 @@ impl Database for MySqlDatabase {
                 )
                 .bind(char)
                 .bind(code)
+                .bind(desc)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        // 初始化键位字根数据
+        let key_radical_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM key_radicals")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if key_radical_count == 0 {
+            let key_radicals = [
+                ("g", "王、一、五、戋", "王旁青头戋（兼）五一", "G区横区第一键，包含横笔和戈字根"),
+                ("f", "土、士、二、干、十、寸、雨", "土士二干十寸雨", "F区横区第二键，包含土字根"),
+                ("d", "大、犬、三、古、石、厂", "大犬三（古）石厂", "D区横区第三键，包含大字根"),
+                ("s", "木、丁、西", "木丁西", "S区横区第四键，包含木字根"),
+                ("a", "工、戈、艹、七、廿", "工戈草头右框七", "A区横区第五键，包含工字根"),
+                ("h", "目、止、卜、虍、上", "目具上止卜虎皮", "H区竖区第一键，包含目字根"),
+                ("j", "日、早、虫、刂、竖", "日早两竖与虫依", "J区竖区第二键，包含日字根"),
+                ("k", "口、川", "口与川，字根稀", "K区竖区第三键，包含口字根"),
+                ("l", "田、甲、四、车、囗", "田甲方框四车里", "L区竖区第四键，包含田字根"),
+                ("m", "山、由、贝、几", "山由贝，下框几", "M区竖区第五键，包含山字根"),
+                ("t", "禾、竹、丿、彳、攵", "禾竹一撇双人立", "T区撇区第一键，包含禾字根"),
+                ("r", "白、手、斤、牛", "白手看头三二斤", "R区撇区第二键，包含白字根"),
+                ("e", "舟、用、月、豕、衣", "舟用乃月豕（家）衣", "E区撇区第三键，包含月字根"),
+                ("w", "人、八、亻", "人八登头单人几", "W区撇区第四键，包含人字根"),
+                ("q", "金、饣、勹、儿、夕", "金勺缺点无尾鱼，犬旁留叉", "Q区撇区第五键，包含金字根"),
+                ("y", "言、文、方、广、丶", "言文方广在四一，高头一捺谁人去", "Y区捺区第一键，包含言字根"),
+                ("u", "立、辛、六、门、疒", "立辛两点六门疒（病）", "U区捺区第二键，包含立字根"),
+                ("i", "氵（三点水）、小", "水旁兴头小倒立", "I区捺区第三键，包含水字根"),
+                ("o", "火、米、灬", "火业头，四点米", "O区捺区第四键，包含火字根"),
+                ("p", "之、宀（宝盖）、冖、礻、衤", "之字军盖建道底，摘礻衤", "P区捺区第五键，包含之字根"),
+                ("n", "已、己、巳、尸、心、羽", "已半巳满不出己，左框折尸心和羽", "N区折区第一键，包含已字根"),
+                ("b", "子、耳、了、也、卩", "子耳了也框向上", "B区折区第二键，包含子字根"),
+                ("v", "女、刀、九、臼", "女刀九臼山朝西", "V区折区第三键，包含女字根"),
+                ("c", "又、巴、马、厶", "又巴马，丢矢矣", "C区折区第四键，包含又字根"),
+                ("x", "幺、母、弓、匕", "慈母无心弓和匕，幼无力", "X区折区第五键，包含丝字根"),
+            ];
+            
+            for (key, radicals, formula, desc) in key_radicals {
+                sqlx::query(
+                    "INSERT INTO key_radicals (key_char, radicals, formula, description) VALUES (?, ?, ?, ?)"
+                )
+                .bind(key)
+                .bind(radicals)
+                .bind(formula)
                 .bind(desc)
                 .execute(&self.pool)
                 .await
@@ -529,28 +593,28 @@ impl Database for MySqlDatabase {
     }
 
     async fn get_key_radicals(&self) -> Result<Vec<KeyRadical>, String> {
-        sqlx::query_as::<_, (i32, String, String, String)>(
-            "SELECT id, key_char, radicals, description FROM key_radicals ORDER BY id"
+        sqlx::query_as::<_, (i32, String, String, String, String)>(
+            "SELECT id, key_char, radicals, formula, description FROM key_radicals ORDER BY id"
         )
         .fetch_all(&self.pool)
         .await
         .map_err(|e| e.to_string())
-        .map(|rows| rows.into_iter().map(|(id, key_char, radicals, description)| KeyRadical {
-            id, key_char, radicals, description
+        .map(|rows| rows.into_iter().map(|(id, key_char, radicals, formula, description)| KeyRadical {
+            id, key_char, radicals, formula, description
         }).collect())
     }
 
     async fn get_key_radical_by_key(&self, key_char: &str) -> Result<Option<KeyRadical>, String> {
-        let result = sqlx::query_as::<_, (i32, String, String, String)>(
-            "SELECT id, key_char, radicals, description FROM key_radicals WHERE key_char = ?"
+        let result = sqlx::query_as::<_, (i32, String, String, String, String)>(
+            "SELECT id, key_char, radicals, formula, description FROM key_radicals WHERE key_char = ?"
         )
         .bind(key_char)
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| e.to_string())?;
 
-        Ok(result.map(|(id, key_char, radicals, description)| KeyRadical {
-            id, key_char, radicals, description
+        Ok(result.map(|(id, key_char, radicals, formula, description)| KeyRadical {
+            id, key_char, radicals, formula, description
         }))
     }
 
@@ -1182,43 +1246,47 @@ impl Database for RedisDatabase {
 
     async fn get_key_radicals(&self) -> Result<Vec<KeyRadical>, String> {
         let mut conn = self.get_connection().await?;
-        
+
         let keys: Vec<String> = conn.keys("wubi:key_radical:*").await
             .map_err(|e| format!("Failed to get keys: {}", e))?;
-        
+
         let mut results = Vec::new();
         for key in keys {
             let radicals: Option<String> = conn.hget(&key, "radicals").await.unwrap_or(None);
+            let formula: Option<String> = conn.hget(&key, "formula").await.unwrap_or(None);
             let description: Option<String> = conn.hget(&key, "description").await.unwrap_or(None);
             let key_char = key.strip_prefix("wubi:key_radical:").unwrap_or("").to_string();
-            
+
             if let Some(radicals) = radicals {
                 let id: i32 = key.split(':').last().unwrap_or("0").parse().unwrap_or(0);
                 results.push(KeyRadical {
                     id,
                     key_char,
                     radicals,
+                    formula: formula.unwrap_or_default(),
                     description: description.unwrap_or_default(),
                 });
             }
         }
-        
+
         results.sort_by_key(|r| r.key_char.clone());
         Ok(results)
     }
 
     async fn get_key_radical_by_key(&self, key_char: &str) -> Result<Option<KeyRadical>, String> {
         let mut conn = self.get_connection().await?;
-        
+
         let key = format!("wubi:key_radical:{}", key_char);
         let radicals: Option<String> = conn.hget(&key, "radicals").await.map_err(|e| format!("Failed to get radicals: {}", e))?;
+        let formula: Option<String> = conn.hget(&key, "formula").await.map_err(|e| format!("Failed to get formula: {}", e))?;
         let description: Option<String> = conn.hget(&key, "description").await.map_err(|e| format!("Failed to get description: {}", e))?;
-        
+
         match radicals {
             Some(radicals) => Ok(Some(KeyRadical {
                 id: 0,
                 key_char: key_char.to_string(),
                 radicals,
+                formula: formula.unwrap_or_default(),
                 description: description.unwrap_or_default(),
             })),
             None => Ok(None),
@@ -1597,8 +1665,9 @@ impl Database for MongoDatabase {
             let id = doc.get_i32("id").unwrap_or(0);
             let key_char = doc.get_str("key_char").unwrap_or("").to_string();
             let radicals = doc.get_str("radicals").unwrap_or("").to_string();
+            let formula = doc.get_str("formula").unwrap_or("").to_string();
             let description = doc.get_str("description").unwrap_or("").to_string();
-            results.push(KeyRadical { id, key_char, radicals, description });
+            results.push(KeyRadical { id, key_char, radicals, formula, description });
         }
         Ok(results)
     }
@@ -1613,8 +1682,9 @@ impl Database for MongoDatabase {
                 let id = doc.get_i32("id").unwrap_or(0);
                 let key_char = doc.get_str("key_char").unwrap_or("").to_string();
                 let radicals = doc.get_str("radicals").unwrap_or("").to_string();
+                let formula = doc.get_str("formula").unwrap_or("").to_string();
                 let description = doc.get_str("description").unwrap_or("").to_string();
-                Ok(Some(KeyRadical { id, key_char, radicals, description }))
+                Ok(Some(KeyRadical { id, key_char, radicals, formula, description }))
             }
             None => Ok(None),
         }
@@ -1754,12 +1824,12 @@ impl Database for PostgresDatabase {
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS user_progress (
-                id SERIAL PRIMARY KEY,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 user_name VARCHAR(64) NOT NULL,
                 lesson_id INT NOT NULL,
                 accuracy FLOAT NOT NULL,
                 score INT NOT NULL,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             )
             "#
         )
@@ -1770,9 +1840,10 @@ impl Database for PostgresDatabase {
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS key_radicals (
-                id SERIAL PRIMARY KEY,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 key_char VARCHAR(4) NOT NULL UNIQUE,
                 radicals TEXT NOT NULL,
+                formula TEXT,
                 description TEXT
             )
             "#
@@ -1872,39 +1943,40 @@ impl Database for PostgresDatabase {
         
         if key_radical_count == 0 {
             let key_radicals = [
-                ("g", "一、五、戈", "G区横区第一键，包含横笔和戈字根"),
-                ("f", "土、二、干", "F区横区第二键，包含土字根"),
-                ("d", "大、三、古", "D区横区第三键，包含大字根"),
-                ("s", "木、丁、西", "S区横区第四键，包含木字根"),
-                ("a", "工、七、草", "A区横区第五键，包含工字根"),
-                ("h", "目、上、止", "H区竖区第一键，包含目字根"),
-                ("j", "日、早、虫", "J区竖区第二键，包含日字根"),
-                ("k", "口、川", "K区竖区第三键，包含口字根"),
-                ("l", "田、甲、车", "L区竖区第四键，包含田字根"),
-                ("m", "山、由、贝", "M区竖区第五键，包含山字根"),
-                ("t", "禾、竹、丿", "T区撇区第一键，包含禾字根"),
-                ("r", "白、手、斤", "R区撇区第二键，包含白字根"),
-                ("e", "月、彡、用", "E区撇区第三键，包含月字根"),
-                ("w", "人、八、祭", "W区撇区第四键，包含人字根"),
-                ("q", "金、勺、鱼", "Q区撇区第五键，包含金字根"),
-                ("y", "言、文、广", "Y区捺区第一键，包含言字根"),
-                ("u", "立、六、辛", "U区捺区第二键，包含立字根"),
-                ("i", "水、小、兴", "I区捺区第三键，包含水字根"),
-                ("o", "火、业、米", "O区捺区第四键，包含火字根"),
-                ("p", "之、冖、广", "P区捺区第五键，包含之字根"),
-                ("n", "已、心、羽", "N区折区第一键，包含已字根"),
-                ("b", "子、了、也", "B区折区第二键，包含子字根"),
-                ("v", "女、刀、九", "V区折区第三键，包含女字根"),
-                ("c", "又、巴、马", "C区折区第四键，包含又字根"),
-                ("x", "丝、弓、匕", "X区折区第五键，包含丝字根"),
+                ("g", "王、一、五、戋", "王旁青头戋（兼）五一", "G区横区第一键，包含横笔和戈字根"),
+                ("f", "土、士、二、干、十、寸、雨", "土士二干十寸雨", "F区横区第二键，包含土字根"),
+                ("d", "大、犬、三、古、石、厂", "大犬三（古）石厂", "D区横区第三键，包含大字根"),
+                ("s", "木、丁、西", "木丁西", "S区横区第四键，包含木字根"),
+                ("a", "工、戈、艹、七、廿", "工戈草头右框七", "A区横区第五键，包含工字根"),
+                ("h", "目、止、卜、虍、上", "目具上止卜虎皮", "H区竖区第一键，包含目字根"),
+                ("j", "日、早、虫、刂、竖", "日早两竖与虫依", "J区竖区第二键，包含日字根"),
+                ("k", "口、川", "口与川，字根稀", "K区竖区第三键，包含口字根"),
+                ("l", "田、甲、四、车、囗", "田甲方框四车里", "L区竖区第四键，包含田字根"),
+                ("m", "山、由、贝、几", "山由贝，下框几", "M区竖区第五键，包含山字根"),
+                ("t", "禾、竹、丿、彳、攵", "禾竹一撇双人立", "T区撇区第一键，包含禾字根"),
+                ("r", "白、手、斤、牛", "白手看头三二斤", "R区撇区第二键，包含白字根"),
+                ("e", "舟、用、月、豕、衣", "舟用乃月豕（家）衣", "E区撇区第三键，包含月字根"),
+                ("w", "人、八、亻", "人八登头单人几", "W区撇区第四键，包含人字根"),
+                ("q", "金、饣、勹、儿、夕", "金勺缺点无尾鱼，犬旁留叉", "Q区撇区第五键，包含金字根"),
+                ("y", "言、文、方、广、丶", "言文方广在四一，高头一捺谁人去", "Y区捺区第一键，包含言字根"),
+                ("u", "立、辛、六、门、疒", "立辛两点六门疒（病）", "U区捺区第二键，包含立字根"),
+                ("i", "氵（三点水）、小", "水旁兴头小倒立", "I区捺区第三键，包含水字根"),
+                ("o", "火、米、灬", "火业头，四点米", "O区捺区第四键，包含火字根"),
+                ("p", "之、宀（宝盖）、冖、礻、衤", "之字军盖建道底，摘礻衤", "P区捺区第五键，包含之字根"),
+                ("n", "已、己、巳、尸、心、羽", "已半巳满不出己，左框折尸心和羽", "N区折区第一键，包含已字根"),
+                ("b", "子、耳、了、也、卩", "子耳了也框向上", "B区折区第二键，包含子字根"),
+                ("v", "女、刀、九、臼", "女刀九臼山朝西", "V区折区第三键，包含女字根"),
+                ("c", "又、巴、马、厶", "又巴马，丢矢矣", "C区折区第四键，包含又字根"),
+                ("x", "幺、母、弓、匕", "慈母无心弓和匕，幼无力", "X区折区第五键，包含丝字根"),
             ];
             
-            for (key, radicals, desc) in key_radicals {
+            for (key, radicals, formula, desc) in key_radicals {
                 sqlx::query(
-                    "INSERT INTO key_radicals (key_char, radicals, description) VALUES ($1, $2, $3)"
+                    "INSERT INTO key_radicals (key_char, radicals, formula, description) VALUES ($1, $2, $3, $4)"
                 )
                 .bind(key)
                 .bind(radicals)
+                .bind(formula)
                 .bind(desc)
                 .execute(&self.pool)
                 .await
@@ -1949,7 +2021,7 @@ impl Database for PostgresDatabase {
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS english_texts (
-                id SERIAL PRIMARY KEY,
+                id INT AUTO_INCREMENT PRIMARY KEY,
                 title VARCHAR(128) NOT NULL,
                 content TEXT NOT NULL,
                 difficulty VARCHAR(16) NOT NULL
@@ -2287,28 +2359,28 @@ impl Database for PostgresDatabase {
     }
 
     async fn get_key_radicals(&self) -> Result<Vec<KeyRadical>, String> {
-        sqlx::query_as::<_, (i32, String, String, String)>(
-            "SELECT id, key_char, radicals, description FROM key_radicals ORDER BY id"
+        sqlx::query_as::<_, (i32, String, String, String, String)>(
+            "SELECT id, key_char, radicals, formula, description FROM key_radicals ORDER BY id"
         )
         .fetch_all(&self.pool)
         .await
         .map_err(|e| e.to_string())
-        .map(|rows| rows.into_iter().map(|(id, key_char, radicals, description)| KeyRadical {
-            id, key_char, radicals, description
+        .map(|rows| rows.into_iter().map(|(id, key_char, radicals, formula, description)| KeyRadical {
+            id, key_char, radicals, formula, description
         }).collect())
     }
 
     async fn get_key_radical_by_key(&self, key_char: &str) -> Result<Option<KeyRadical>, String> {
-        let result = sqlx::query_as::<_, (i32, String, String, String)>(
-            "SELECT id, key_char, radicals, description FROM key_radicals WHERE key_char = $1"
+        let result = sqlx::query_as::<_, (i32, String, String, String, String)>(
+            "SELECT id, key_char, radicals, formula, description FROM key_radicals WHERE key_char = $1"
         )
         .bind(key_char)
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| e.to_string())?;
 
-        Ok(result.map(|(id, key_char, radicals, description)| KeyRadical {
-            id, key_char, radicals, description
+        Ok(result.map(|(id, key_char, radicals, formula, description)| KeyRadical {
+            id, key_char, radicals, formula, description
         }))
     }
 
