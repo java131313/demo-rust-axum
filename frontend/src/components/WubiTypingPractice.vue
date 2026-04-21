@@ -124,9 +124,6 @@
         />
       </div>
       
-      <!-- 虚拟键盘指法提示 -->
-      <VirtualKeyboard :activeKey="currentActiveKey" :wubiCode="currentWubiCode?.full_code" :codeIndex="wubiCodeIndex" />
-      
       <!-- 控制按钮 -->
       <div class="control-buttons">
         <a-space>
@@ -190,13 +187,29 @@
 <script>
 import axios from 'axios';
 import WubiGraph from './WubiGraph.vue';
-import VirtualKeyboard from './VirtualKeyboard.vue';
 
 export default {
   name: 'WubiTypingPractice',
   components: {
-    WubiGraph,
-    VirtualKeyboard
+    WubiGraph
+  },
+  inject: {
+    virtualKeyboard: {
+      default() {
+        return {
+          setKeyboard() {},
+          resetKeyboard() {},
+          registerKeyboardSync() {
+            return () => {};
+          },
+        };
+      },
+    },
+    homeTabs: {
+      default() {
+        return { activeTabKey: { value: '1' } };
+      },
+    },
   },
   data() {
     return {
@@ -296,13 +309,28 @@ export default {
         this.searchResult = null;
         this.searchError = null;
       }
-    }
+    },
+    currentActiveKey() {
+      this.syncKeyboardToHost();
+    },
+    wubiCodeIndex() {
+      this.syncKeyboardToHost();
+    },
+    currentWubiCode: {
+      handler() {
+        this.syncKeyboardToHost();
+      },
+      deep: true,
+    },
   },
   async mounted() {
     await this.loadData();
+    this._vkUnreg = this.virtualKeyboard.registerKeyboardSync('1', this.syncKeyboardToHost);
+    this.syncKeyboardToHost();
     window.addEventListener('keydown', this.handleGlobalKeyDown);
   },
   beforeUnmount() {
+    if (this._vkUnreg) this._vkUnreg();
     window.removeEventListener('keydown', this.handleGlobalKeyDown);
     if (this.timer) {
       clearInterval(this.timer);
@@ -312,6 +340,19 @@ export default {
     }
   },
   methods: {
+    activeHomeTabKey() {
+      const tab = this.homeTabs?.activeTabKey;
+      if (tab && typeof tab === 'object' && 'value' in tab) return tab.value;
+      return tab;
+    },
+    syncKeyboardToHost() {
+      if (this.activeHomeTabKey() !== '1') return;
+      this.virtualKeyboard.setKeyboard({
+        activeKey: this.currentActiveKey,
+        wubiCode: this.currentWubiCode?.full_code ?? null,
+        codeIndex: this.wubiCodeIndex,
+      });
+    },
     async loadData() {
       try {
         // 并行加载数据，但分别处理错误

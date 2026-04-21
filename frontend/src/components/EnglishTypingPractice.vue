@@ -70,7 +70,7 @@
       <div class="current-char-hint" v-if="currentChar">
         <a-alert
           message="当前需要输入"
-          :description="字符"
+          :description="String(currentChar)"
           type="info"
           show-icon
         />
@@ -96,8 +96,6 @@
           />
         </div>
       </div>
-      
-      <VirtualKeyboard :activeKey="currentActiveKey" />
       
       <div class="control-buttons">
         <a-space>
@@ -133,12 +131,26 @@
 
 <script>
 import axios from 'axios';
-import VirtualKeyboard from './VirtualKeyboard.vue';
 
 export default {
   name: 'EnglishTypingPractice',
-  components: {
-    VirtualKeyboard
+  inject: {
+    virtualKeyboard: {
+      default() {
+        return {
+          setKeyboard() {},
+          resetKeyboard() {},
+          registerKeyboardSync() {
+            return () => {};
+          },
+        };
+      },
+    },
+    homeTabs: {
+      default() {
+        return { activeTabKey: { value: '3' } };
+      },
+    },
   },
   data() {
     return {
@@ -196,13 +208,22 @@ export default {
   watch: {
     practiceMode() {
       this.resetPractice();
-    }
+    },
+    currentActiveKey() {
+      this.syncKeyboardToHost();
+    },
+    userInput() {
+      this.syncKeyboardToHost();
+    },
   },
   async mounted() {
     await this.loadData();
+    this._vkUnreg = this.virtualKeyboard.registerKeyboardSync('3', this.syncKeyboardToHost);
+    this.syncKeyboardToHost();
     window.addEventListener('keydown', this.handleGlobalKeyDown);
   },
   beforeUnmount() {
+    if (this._vkUnreg) this._vkUnreg();
     window.removeEventListener('keydown', this.handleGlobalKeyDown);
     if (this.timer) {
       clearInterval(this.timer);
@@ -212,6 +233,19 @@ export default {
     }
   },
   methods: {
+    activeHomeTabKey() {
+      const tab = this.homeTabs?.activeTabKey;
+      if (tab && typeof tab === 'object' && 'value' in tab) return tab.value;
+      return tab;
+    },
+    syncKeyboardToHost() {
+      if (this.activeHomeTabKey() !== '3') return;
+      this.virtualKeyboard.setKeyboard({
+        activeKey: this.currentActiveKey,
+        wubiCode: null,
+        codeIndex: 0,
+      });
+    },
     async loadData() {
       try {
         const res = await axios.get('/api/english-texts').catch(() => ({ data: [] }));

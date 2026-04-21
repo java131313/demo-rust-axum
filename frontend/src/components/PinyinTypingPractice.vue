@@ -162,6 +162,24 @@ import axios from 'axios';
 
 export default {
   name: 'PinyinTypingPractice',
+  inject: {
+    virtualKeyboard: {
+      default() {
+        return {
+          setKeyboard() {},
+          resetKeyboard() {},
+          registerKeyboardSync() {
+            return () => {};
+          },
+        };
+      },
+    },
+    homeTabs: {
+      default() {
+        return { activeTabKey: { value: '4' } };
+      },
+    },
+  },
   data() {
     return {
       articles: [],
@@ -212,12 +230,32 @@ export default {
       const char = this.currentArticle.content[this.currentCharIndex];
       const isChineseChar = /[\u4e00-\u9fa5]/.test(char);
       return isChineseChar ? char : null;
-    }
+    },
+    pinyinKeyboardHint() {
+      const py = this.currentPinyin;
+      if (!py || py === '未知') return null;
+      const m = String(py).match(/[a-zA-Z]/);
+      return m ? m[0].toLowerCase() : null;
+    },
+  },
+  watch: {
+    currentPinyin() {
+      this.syncKeyboardToHost();
+    },
+    currentCharacter() {
+      this.syncKeyboardToHost();
+    },
+    currentCharIndex() {
+      this.syncKeyboardToHost();
+    },
   },
   async mounted() {
     await this.loadData();
+    this._vkUnreg = this.virtualKeyboard.registerKeyboardSync('4', this.syncKeyboardToHost);
+    this.syncKeyboardToHost();
   },
   beforeUnmount() {
+    if (this._vkUnreg) this._vkUnreg();
     if (this.timer) {
       clearInterval(this.timer);
     }
@@ -226,6 +264,19 @@ export default {
     }
   },
   methods: {
+    activeHomeTabKey() {
+      const tab = this.homeTabs?.activeTabKey;
+      if (tab && typeof tab === 'object' && 'value' in tab) return tab.value;
+      return tab;
+    },
+    syncKeyboardToHost() {
+      if (this.activeHomeTabKey() !== '4') return;
+      this.virtualKeyboard.setKeyboard({
+        activeKey: this.pinyinKeyboardHint,
+        wubiCode: null,
+        codeIndex: 0,
+      });
+    },
     async loadData() {
       try {
         const response = await axios.get('/api/articles');
