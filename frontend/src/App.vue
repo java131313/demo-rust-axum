@@ -1,5 +1,7 @@
 <template>
-  <router-view />
+  <a-config-provider component-size="large">
+    <router-view />
+  </a-config-provider>
 </template>
 
 <script setup>
@@ -7,7 +9,12 @@
 
 <style>
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
+  font-family:
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Microsoft YaHei",
+    "Noto Sans CJK SC",
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

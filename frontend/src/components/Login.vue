@@ -132,11 +132,19 @@ const handleRegister = async () => {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 24px 16px;
+  background: linear-gradient(135deg, #4c6cb3 0%, #5a4a7a 100%);
 }
 
 .login-card {
-  width: 400px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 480px;
+  min-width: min(100%, 320px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.login-card :deep(.ant-card-head-title) {
+  font-size: 1.35rem;
+  font-weight: 700;
 }
 </style>

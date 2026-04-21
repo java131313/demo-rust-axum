@@ -1,12 +1,20 @@
 <template>
-  <div>
-    <a-input v-model:value="inputChar" placeholder="输入汉字" @pressEnter="lookupWubi" />
-    <a-button type="primary" @click="lookupWubi">查询</a-button>
-    <div v-if="result">
-      <p>汉字: {{ result.character }}</p>
-      <p>全码: {{ result.full_code }}</p>
-      <p v-if="result.simple_code">简码: {{ result.simple_code }}</p>
-    </div>
+  <div class="wubi-lookup-page">
+    <a-space direction="vertical" size="large" style="width: 100%">
+      <a-input
+        v-model:value="inputChar"
+        placeholder="输入一个汉字"
+        size="large"
+        style="max-width: 320px"
+        @pressEnter="lookupWubi"
+      />
+      <a-button type="primary" size="large" @click="lookupWubi">查询</a-button>
+      <div v-if="result" class="wubi-lookup-result">
+        <p><strong>汉字：</strong>{{ result.character }}</p>
+        <p><strong>全码：</strong>{{ result.full_code }}</p>
+        <p v-if="result.simple_code"><strong>简码：</strong>{{ result.simple_code }}</p>
+      </div>
+    </a-space>
   </div>
 </template>
 
@@ -27,3 +35,20 @@ const lookupWubi = async () => {
   }
 };
 </script>
+
+<style scoped>
+.wubi-lookup-page {
+  padding: 8px 4px 24px;
+  max-width: 560px;
+}
+
+.wubi-lookup-result {
+  font-size: 1.15rem;
+  line-height: 1.85;
+  color: #141414;
+}
+
+.wubi-lookup-result p {
+  margin: 0.35em 0;
+}
+</style>

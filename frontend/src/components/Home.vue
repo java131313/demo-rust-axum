@@ -76,7 +76,7 @@ const handleLogout = async () => {
 
 <style scoped>
 .app-container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
 }
 
@@ -84,33 +84,41 @@ const handleLogout = async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
-  background-color: #1890ff;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 20px;
+  background-color: #1677ff;
   color: white;
 }
 
 .logo {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
 }
 
 .user-info {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .username {
-  font-size: 1rem;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 .content {
-  padding: 24px;
+  padding: 20px 16px 28px;
 }
 
 .footer {
   text-align: center;
-  padding: 16px;
+  padding: 18px 16px;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #434343;
   background: #f0f2f5;
 }
 </style>

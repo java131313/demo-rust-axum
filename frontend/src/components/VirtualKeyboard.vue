@@ -249,27 +249,27 @@ export default {
 }
 
 .keyboard-header h3 {
-  margin: 0 0 8px 0;
-  font-size: 16px;
+  margin: 0 0 10px 0;
+  font-size: 1.15rem;
 }
 
 .keyboard-header p {
   margin: 0;
-  font-size: 14px;
-  color: #94a3b8;
+  font-size: 1rem;
+  color: #cbd5e1;
 }
 
 .highlight-code {
   color: #fbbf24;
   font-weight: bold;
-  font-size: 18px;
-  letter-spacing: 4px;
+  font-size: 1.2rem;
+  letter-spacing: 0.12em;
 }
 
 .highlight-key {
   color: #fbbf24;
   font-weight: bold;
-  font-size: 18px;
+  font-size: 1.2rem;
 }
 
 .code-display {
@@ -280,16 +280,16 @@ export default {
 }
 
 .code-char {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   background: #334155;
   border: 1px solid #475569;
-  border-radius: 6px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #cbd5e1;
-  font-size: 16px;
+  font-size: 1.1rem;
   font-weight: bold;
 }
 
@@ -304,27 +304,27 @@ export default {
 .keyboard {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .row {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   justify-content: center;
 }
 
 .key {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   background: #334155;
   border: 1px solid #475569;
-  border-radius: 6px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #cbd5e1;
-  font-size: 12px;
-  font-weight: 500;
+  color: #e2e8f0;
+  font-size: 15px;
+  font-weight: 600;
   transition: all 0.15s ease;
   position: relative;
   cursor: pointer;
@@ -336,15 +336,15 @@ export default {
 }
 
 .key.wide {
-  width: 60px;
+  width: 72px;
 }
 
 .key.wider {
-  width: 70px;
+  width: 84px;
 }
 
 .key.extra-wide {
-  width: 80px;
+  width: 96px;
 }
 
 .key.space {
@@ -404,8 +404,10 @@ export default {
   background: #0f172a;
   border: 1px solid #475569;
   border-radius: 8px;
-  padding: 12px 16px;
-  min-width: 180px;
+  padding: 14px 18px;
+  min-width: 200px;
+  font-size: 1.05rem;
+  line-height: 1.5;
   text-align: center;
   z-index: 100;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -414,21 +416,22 @@ export default {
 
 .tooltip-key {
   color: #fbbf24;
-  font-size: 14px;
+  font-size: 1rem;
   font-weight: bold;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .tooltip-radicals {
   color: #e2e8f0;
-  font-size: 18px;
+  font-size: 1.15rem;
   font-weight: bold;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .tooltip-desc {
-  color: #94a3b8;
-  font-size: 12px;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  line-height: 1.45;
 }
 
 .finger-legend {
@@ -444,14 +447,14 @@ export default {
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: #94a3b8;
-  font-size: 12px;
+  gap: 8px;
+  color: #cbd5e1;
+  font-size: 0.95rem;
 }
 
 .color-box {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 4px;
 }
 

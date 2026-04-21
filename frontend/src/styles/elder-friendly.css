@@ -1,0 +1,177 @@
+/**
+ * 适老化界面：更大字号、更高对比、更易点击（适合约 60 岁及以上用户）
+ * 在 ant-design-vue 样式之后加载，用于温和覆盖默认尺寸。
+ */
+
+:root {
+  --elder-text: #141414;
+  --elder-text-secondary: #434343;
+  --elder-bg-subtle: #fafafa;
+  --elder-touch-min: 48px;
+  --elder-radius: 8px;
+}
+
+html {
+  font-size: 18px;
+}
+
+body {
+  font-family:
+    "PingFang SC",
+    "Hiragino Sans GB",
+    "Microsoft YaHei",
+    "Noto Sans CJK SC",
+    "Source Han Sans SC",
+    sans-serif;
+  color: var(--elder-text);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  font-family: inherit;
+  color: inherit;
+}
+
+/* —— Ant Design Vue 通用放大 —— */
+.ant-btn {
+  min-height: var(--elder-touch-min);
+  padding: 0 20px;
+  font-size: 1.05rem;
+  border-radius: var(--elder-radius);
+}
+
+.ant-btn-sm {
+  min-height: 40px;
+  font-size: 1rem;
+}
+
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-password,
+.ant-select-selector,
+.ant-picker {
+  font-size: 1.05rem !important;
+  border-radius: var(--elder-radius) !important;
+}
+
+.ant-input-affix-wrapper .ant-input,
+.ant-input-password .ant-input {
+  font-size: 1.05rem !important;
+}
+
+textarea.ant-input {
+  font-size: 1.1rem !important;
+  line-height: 1.7 !important;
+}
+
+.ant-tabs-tab {
+  font-size: 1.1rem !important;
+  padding: 14px 18px !important;
+}
+
+.ant-tabs-tab-btn {
+  font-size: inherit !important;
+}
+
+.ant-card-head-title {
+  font-size: 1.2rem !important;
+  font-weight: 600;
+}
+
+.ant-card-extra {
+  font-size: 1rem;
+}
+
+.ant-form-item-label > label {
+  font-size: 1.05rem !important;
+  height: auto !important;
+  line-height: 1.5 !important;
+}
+
+.ant-statistic-title {
+  font-size: 1rem !important;
+  color: var(--elder-text-secondary) !important;
+}
+
+.ant-statistic-content-value {
+  font-size: 1.35rem !important;
+}
+
+.ant-alert-message {
+  font-size: 1.1rem !important;
+  font-weight: 600;
+}
+
+.ant-alert-description {
+  font-size: 1.05rem !important;
+  line-height: 1.65 !important;
+  color: var(--elder-text) !important;
+}
+
+.ant-select-selection-item,
+.ant-select-item-option-content {
+  font-size: 1.05rem !important;
+}
+
+.ant-layout-header {
+  min-height: 64px !important;
+  height: auto !important;
+  line-height: 1.4 !important;
+  padding: 12px 20px !important;
+  display: flex;
+  align-items: center;
+}
+
+.ant-layout-footer {
+  font-size: 1rem !important;
+  color: var(--elder-text-secondary) !important;
+  line-height: 1.6 !important;
+}
+
+.ant-radio-button-wrapper {
+  font-size: 1.05rem !important;
+  padding: 10px 16px !important;
+  height: auto !important;
+  line-height: 1.4 !important;
+}
+
+.ant-space-item {
+  font-size: inherit;
+}
+
+/* 打字练习：正文与提示更易读 */
+.wubi-practice-container .original-text,
+.pinyin-practice-container .original-text,
+.english-practice-container .original-text {
+  font-size: 1.25rem !important;
+  line-height: 1.85 !important;
+}
+
+.wubi-practice-container .text-content,
+.pinyin-practice-container .text-content,
+.english-practice-container .text-content {
+  letter-spacing: 0.02em;
+}
+
+.wubi-practice-container .char,
+.pinyin-practice-container .char,
+.english-practice-container .char {
+  padding: 5px 4px;
+  min-width: 1.1em;
+  display: inline-block;
+  text-align: center;
+}
+
+/* 链接与幽灵按钮在蓝底上更清晰 */
+.ant-btn-background-ghost.ant-btn-primary {
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 500;
+}
+
+.ant-btn-background-ghost.ant-btn-primary:hover {
+  color: #fff !important;
+  border-color: #fff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+}
