@@ -1808,6 +1808,20 @@ impl Database for PostgresDatabase {
 
         sqlx::query(
             r#"
+            CREATE TABLE IF NOT EXISTS english_texts (
+                id SERIAL PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                difficulty VARCHAR(10) DEFAULT 'medium'
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        sqlx::query(
+            r#"
             CREATE TABLE IF NOT EXISTS wubi_roots (
                 id SERIAL PRIMARY KEY,
                 character_val VARCHAR(32) NOT NULL,
@@ -1978,6 +1992,32 @@ impl Database for PostgresDatabase {
                 .bind(radicals)
                 .bind(formula)
                 .bind(desc)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        let english_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM english_texts")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if english_count == 0 {
+            let english_texts = [
+                ("基础练习", "the quick brown fox jumps over the lazy dog", "easy"),
+                ("常用句子", "hello world this is a typing practice text for english learning", "easy"),
+                ("进阶练习", "practice makes perfect keep typing to improve your speed and accuracy", "medium"),
+                ("高级练习", "the five boxing wizards jump quickly at dawn every single day", "hard"),
+            ];
+            
+            for (title, content, difficulty) in english_texts {
+                sqlx::query(
+                    "INSERT INTO english_texts (title, content, difficulty) VALUES ($1, $2, $3)"
+                )
+                .bind(title)
+                .bind(content)
+                .bind(difficulty)
                 .execute(&self.pool)
                 .await
                 .map_err(|e| e.to_string())?;
