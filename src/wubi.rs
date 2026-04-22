@@ -338,6 +338,54 @@ pub async fn get_english_texts(State(state): State<AppState>) -> Result<Json<Vec
     Ok(Json(texts))
 }
 
+/// GET /api/japanese-texts
+pub async fn get_japanese_texts(State(state): State<AppState>) -> Result<Json<Vec<crate::config::JapaneseText>>, StatusCode> {
+    let texts = state.db.get_japanese_texts().await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(texts))
+}
+
+/// GET /api/japanese-keyboards
+pub async fn get_japanese_keyboards(State(state): State<AppState>) -> Result<Json<Vec<crate::config::JapaneseKeyboard>>, StatusCode> {
+    let keyboards = state.db.get_japanese_keyboards().await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(keyboards))
+}
+
+/// GET /api/japanese-characters
+pub async fn get_japanese_characters(State(state): State<AppState>) -> Result<Json<Vec<crate::config::JapaneseCharacter>>, StatusCode> {
+    let characters = state.db.get_japanese_characters().await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(characters))
+}
+
+/// GET /api/traditional-chinese-texts
+pub async fn get_traditional_chinese_texts(State(state): State<AppState>) -> Result<Json<Vec<crate::config::TraditionalChineseText>>, StatusCode> {
+    let texts = state.db.get_traditional_chinese_texts().await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(texts))
+}
+
+/// GET /api/bopomofo-keyboards
+pub async fn get_bopomofo_keyboards(State(state): State<AppState>) -> Result<Json<Vec<crate::config::BopomofoKeyboard>>, StatusCode> {
+    let keyboards = state.db.get_bopomofo_keyboards().await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(keyboards))
+}
+
+/// GET /api/bopomofo-characters
+pub async fn get_bopomofo_characters(State(state): State<AppState>) -> Result<Json<Vec<crate::config::BopomofoCharacter>>, StatusCode> {
+    let characters = state.db.get_bopomofo_characters().await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(characters))
+}
+
 /// Generate JWT token for user.
 pub fn generate_token(user_id: i32) -> Result<String, jsonwebtoken::errors::Error> {
     let secret = env::var("JWT_SECRET").unwrap_or_else(|_| "your-secret-key".to_string());

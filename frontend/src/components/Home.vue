@@ -26,6 +26,12 @@
             <a-tab-pane key="4" tab="拼音打字练习">
               <PinyinTypingPractice />
             </a-tab-pane>
+            <a-tab-pane key="6" tab="日语打字练习">
+              <JapaneseTypingPractice />
+            </a-tab-pane>
+            <a-tab-pane key="7" tab="繁体中文注音">
+              <TraditionalChineseTypingPractice />
+            </a-tab-pane>
             <a-tab-pane key="5" tab="字根键盘与口诀">
               <WubiRootKeyboard />
             </a-tab-pane>
@@ -52,6 +58,7 @@
           :active-key="keyboard.activeKey"
           :wubi-code="keyboard.wubiCode"
           :code-index="keyboard.codeIndex"
+          :keyboard-type="activeTabKey === '6' ? 'japanese' : activeTabKey === '7' ? 'bopomofo' : 'qwerty'"
         />
         <div class="keyboard-close" @click="hideKeyboard">
           <span>×</span>
@@ -78,12 +85,14 @@ import WubiLookup from './WubiLookup.vue';
 import EnglishTypingPractice from './EnglishTypingPractice.vue';
 import PinyinTypingPractice from './PinyinTypingPractice.vue';
 import WubiRootKeyboard from './WubiRootKeyboard.vue';
+import JapaneseTypingPractice from './JapaneseTypingPractice.vue';
+import TraditionalChineseTypingPractice from './TraditionalChineseTypingPractice.vue';
 
 const router = useRouter();
 const user = ref(null);
 
 const activeTabKey = ref('1');
-const keyboardEnabled = ref(false);
+const keyboardEnabled = ref(true);
 const keyboardVisible = ref(false);
 const keyboard = reactive({
   activeKey: null,
@@ -113,7 +122,9 @@ const keyboardSyncByTab = new Map();
 
 function toggleKeyboard(checked) {
   keyboardEnabled.value = checked;
-  if (!checked) {
+  if (checked) {
+    keyboardVisible.value = true;
+  } else {
     keyboardVisible.value = false;
   }
 }

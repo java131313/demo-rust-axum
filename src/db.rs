@@ -8,7 +8,7 @@ use futures::stream::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use crate::config::{User, Lesson, Article, WubiRoot, WubiCharacter, KeyRadical, EnglishText};
+use crate::config::{User, Lesson, Article, WubiRoot, WubiCharacter, KeyRadical, EnglishText, JapaneseText, JapaneseKeyboard, JapaneseCharacter, TraditionalChineseText, BopomofoKeyboard, BopomofoCharacter};
 
 #[derive(Debug, Deserialize)]
 struct WubiDictEntry {
@@ -97,6 +97,24 @@ pub trait Database: Send + Sync {
     
     /// 获取所有英语练习文章
     async fn get_english_texts(&self) -> Result<Vec<EnglishText>, String>;
+    
+    /// 获取所有日语练习文章
+    async fn get_japanese_texts(&self) -> Result<Vec<JapaneseText>, String>;
+    
+    /// 获取所有日语键盘布局
+    async fn get_japanese_keyboards(&self) -> Result<Vec<JapaneseKeyboard>, String>;
+    
+    /// 获取所有日语字符
+    async fn get_japanese_characters(&self) -> Result<Vec<JapaneseCharacter>, String>;
+    
+    /// 获取所有繁体中文练习文章
+    async fn get_traditional_chinese_texts(&self) -> Result<Vec<TraditionalChineseText>, String>;
+    
+    /// 获取所有注音键盘布局
+    async fn get_bopomofo_keyboards(&self) -> Result<Vec<BopomofoKeyboard>, String>;
+    
+    /// 获取所有注音字符
+    async fn get_bopomofo_characters(&self) -> Result<Vec<BopomofoCharacter>, String>;
 }
 
 /// MySQL数据库实现
@@ -220,6 +238,50 @@ impl Database for MySqlDatabase {
         .await
         .map_err(|e| e.to_string())?;
 
+        // 创建日语相关表
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS japanese_keyboards (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                layout_name VARCHAR(100) NOT NULL UNIQUE,
+                description TEXT
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS japanese_characters (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                `character` VARCHAR(10) NOT NULL,
+                romanji VARCHAR(50) NOT NULL,
+                keyboard_key VARCHAR(10) NOT NULL,
+                layout_id INT NOT NULL,
+                FOREIGN KEY (layout_id) REFERENCES japanese_keyboards(id)
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS japanese_texts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                difficulty VARCHAR(10) DEFAULT 'medium'
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
         // 插入示例数据
         let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM lessons")
             .fetch_one(&self.pool)
@@ -289,6 +351,250 @@ impl Database for MySqlDatabase {
                 .bind(radicals)
                 .bind(formula)
                 .bind(desc)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        // 初始化日语键盘布局数据
+        let japanese_keyboard_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM japanese_keyboards")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if japanese_keyboard_count == 0 {
+            let keyboard_layouts = [
+                ("QWERTY Japanese", "标准QWERTY键盘的日语布局，使用罗马字输入"),
+            ];
+            
+            for (layout_name, description) in keyboard_layouts {
+                sqlx::query(
+                    "INSERT INTO japanese_keyboards (layout_name, description) VALUES (?, ?)"
+                )
+                .bind(layout_name)
+                .bind(description)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        // 初始化日语字符数据
+        let japanese_character_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM japanese_characters")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if japanese_character_count == 0 {
+            let japanese_chars = [
+                ("あ", "a", "a", 1),
+                ("い", "i", "i", 1),
+                ("う", "u", "u", 1),
+                ("え", "e", "e", 1),
+                ("お", "o", "o", 1),
+                ("か", "ka", "k", 1),
+                ("き", "ki", "k", 1),
+                ("く", "ku", "k", 1),
+                ("け", "ke", "k", 1),
+                ("こ", "ko", "k", 1),
+                ("さ", "sa", "s", 1),
+                ("し", "shi", "s", 1),
+                ("す", "su", "s", 1),
+                ("せ", "se", "s", 1),
+                ("そ", "so", "s", 1),
+            ];
+            
+            for (character, romanji, keyboard_key, layout_id) in japanese_chars {
+                sqlx::query(
+                    "INSERT INTO japanese_characters (`character`, romanji, keyboard_key, layout_id) VALUES (?, ?, ?, ?)"
+                )
+                .bind(character)
+                .bind(romanji)
+                .bind(keyboard_key)
+                .bind(layout_id)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        // 初始化日语文章数据
+        let japanese_text_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM japanese_texts")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if japanese_text_count == 0 {
+            let japanese_texts = [
+                ("基础练习", "あいうえおかきくけこさしすせそ", "easy"),
+                ("常用句子", "こんにちは、元気ですか？私は元気です。", "easy"),
+                ("进阶练习", "日本語の勉強は楽しいです。毎日勉強しています。", "medium"),
+                ("高级练习", "東京は日本の首都です。人口が多くてにぎやかです。", "hard"),
+            ];
+            
+            for (title, content, difficulty) in japanese_texts {
+                sqlx::query(
+                    "INSERT INTO japanese_texts (title, content, difficulty) VALUES (?, ?, ?)"
+                )
+                .bind(title)
+                .bind(content)
+                .bind(difficulty)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        // 创建繁体中文注音相关表
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS bopomofo_keyboards (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                layout_name VARCHAR(100) NOT NULL UNIQUE,
+                description TEXT
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS bopomofo_characters (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                `character` VARCHAR(10) NOT NULL,
+                bopomofo VARCHAR(50) NOT NULL,
+                keyboard_key VARCHAR(10) NOT NULL,
+                layout_id INT NOT NULL,
+                FOREIGN KEY (layout_id) REFERENCES bopomofo_keyboards(id)
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS traditional_chinese_texts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                difficulty VARCHAR(10) DEFAULT 'medium'
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        // 初始化注音键盘布局数据
+        let bopomofo_keyboard_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM bopomofo_keyboards")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if bopomofo_keyboard_count == 0 {
+            let keyboard_layouts = [
+                ("Bopomofo Keyboard", "标准注音键盘布局，使用注音符号输入"),
+            ];
+            
+            for (layout_name, description) in keyboard_layouts {
+                sqlx::query(
+                    "INSERT INTO bopomofo_keyboards (layout_name, description) VALUES (?, ?)"
+                )
+                .bind(layout_name)
+                .bind(description)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        // 初始化注音字符数据
+        let bopomofo_character_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM bopomofo_characters")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if bopomofo_character_count == 0 {
+            let bopomofo_chars = [
+                ("ㄅ", "b", "b", 1),
+                ("ㄆ", "p", "p", 1),
+                ("ㄇ", "m", "m", 1),
+                ("ㄈ", "f", "f", 1),
+                ("ㄉ", "d", "d", 1),
+                ("ㄊ", "t", "t", 1),
+                ("ㄋ", "n", "n", 1),
+                ("ㄌ", "l", "l", 1),
+                ("ㄍ", "g", "g", 1),
+                ("ㄎ", "k", "k", 1),
+                ("ㄏ", "h", "h", 1),
+                ("ㄐ", "j", "j", 1),
+                ("ㄑ", "q", "q", 1),
+                ("ㄒ", "x", "x", 1),
+                ("ㄓ", "zh", "z", 1),
+                ("ㄔ", "ch", "c", 1),
+                ("ㄕ", "sh", "s", 1),
+                ("ㄖ", "r", "r", 1),
+                ("ㄗ", "z", "z", 1),
+                ("ㄘ", "c", "c", 1),
+                ("ㄙ", "s", "s", 1),
+                ("ㄧ", "i", "i", 1),
+                ("ㄨ", "u", "u", 1),
+                ("ㄩ", "ü", "v", 1),
+                ("ㄚ", "a", "a", 1),
+                ("ㄛ", "o", "o", 1),
+                ("ㄜ", "e", "e", 1),
+                ("ㄝ", "ê", "e", 1),
+                ("ㄞ", "ai", "a", 1),
+                ("ㄟ", "ei", "e", 1),
+                ("ㄠ", "ao", "a", 1),
+                ("ㄡ", "ou", "o", 1),
+                ("ㄢ", "an", "a", 1),
+                ("ㄣ", "en", "e", 1),
+                ("ㄤ", "ang", "a", 1),
+                ("ㄥ", "eng", "e", 1),
+                ("ㄦ", "er", "e", 1),
+            ];
+            
+            for (character, bopomofo, keyboard_key, layout_id) in bopomofo_chars {
+                sqlx::query(
+                    "INSERT INTO bopomofo_characters (`character`, bopomofo, keyboard_key, layout_id) VALUES (?, ?, ?, ?)"
+                )
+                .bind(character)
+                .bind(bopomofo)
+                .bind(keyboard_key)
+                .bind(layout_id)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        // 初始化繁体中文文章数据
+        let traditional_chinese_text_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM traditional_chinese_texts")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if traditional_chinese_text_count == 0 {
+            let traditional_chinese_texts = [
+                ("基础练习", "一二人三四五六七八九十", "easy"),
+                ("常用句子", "你好，歡迎光臨！請問有什麼可以幫您的嗎？", "easy"),
+                ("进阶练习", "中華文化源遠流長，博大精深，值得我們好好學習。", "medium"),
+                ("高级练习", "臺灣是一個美麗的島嶼，擁有豐富的自然資源和人文景觀。", "hard"),
+            ];
+            
+            for (title, content, difficulty) in traditional_chinese_texts {
+                sqlx::query(
+                    "INSERT INTO traditional_chinese_texts (title, content, difficulty) VALUES (?, ?, ?)"
+                )
+                .bind(title)
+                .bind(content)
+                .bind(difficulty)
                 .execute(&self.pool)
                 .await
                 .map_err(|e| e.to_string())?;
@@ -627,6 +933,78 @@ impl Database for MySqlDatabase {
         .map_err(|e| e.to_string())
         .map(|rows| rows.into_iter().map(|(id, title, content, difficulty)| EnglishText {
             id, title, content, difficulty
+        }).collect())
+    }
+
+    async fn get_japanese_texts(&self) -> Result<Vec<JapaneseText>, String> {
+        sqlx::query_as::<_, (i32, String, String, String)>(
+            "SELECT id, title, content, difficulty FROM japanese_texts ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, title, content, difficulty)| JapaneseText {
+            id, title, content, difficulty
+        }).collect())
+    }
+
+    async fn get_japanese_keyboards(&self) -> Result<Vec<JapaneseKeyboard>, String> {
+        sqlx::query_as::<_, (i32, String, String)>(
+            "SELECT id, layout_name, description FROM japanese_keyboards ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, layout_name, description)| JapaneseKeyboard {
+            id, layout_name, description
+        }).collect())
+    }
+
+    async fn get_japanese_characters(&self) -> Result<Vec<JapaneseCharacter>, String> {
+        sqlx::query_as::<_, (i32, String, String, String, i32)>(
+            "SELECT id, `character`, romanji, keyboard_key, layout_id FROM japanese_characters ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, character, romanji, keyboard_key, layout_id)| JapaneseCharacter {
+            id, character, romanji, keyboard_key, layout_id
+        }).collect())
+    }
+
+    async fn get_traditional_chinese_texts(&self) -> Result<Vec<TraditionalChineseText>, String> {
+        sqlx::query_as::<_, (i32, String, String, String)>(
+            "SELECT id, title, content, difficulty FROM traditional_chinese_texts ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, title, content, difficulty)| TraditionalChineseText {
+            id, title, content, difficulty
+        }).collect())
+    }
+
+    async fn get_bopomofo_keyboards(&self) -> Result<Vec<BopomofoKeyboard>, String> {
+        sqlx::query_as::<_, (i32, String, String)>(
+            "SELECT id, layout_name, description FROM bopomofo_keyboards ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, layout_name, description)| BopomofoKeyboard {
+            id, layout_name, description
+        }).collect())
+    }
+
+    async fn get_bopomofo_characters(&self) -> Result<Vec<BopomofoCharacter>, String> {
+        sqlx::query_as::<_, (i32, String, String, String, i32)>(
+            "SELECT id, `character`, bopomofo, keyboard_key, layout_id FROM bopomofo_characters ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, character, bopomofo, keyboard_key, layout_id)| BopomofoCharacter {
+            id, character, bopomofo, keyboard_key, layout_id
         }).collect())
     }
 }
@@ -1296,6 +1674,30 @@ impl Database for RedisDatabase {
     async fn get_english_texts(&self) -> Result<Vec<EnglishText>, String> {
         Ok(vec![])
     }
+
+    async fn get_japanese_texts(&self) -> Result<Vec<JapaneseText>, String> {
+        Ok(vec![])
+    }
+
+    async fn get_japanese_keyboards(&self) -> Result<Vec<JapaneseKeyboard>, String> {
+        Ok(vec![])
+    }
+
+    async fn get_japanese_characters(&self) -> Result<Vec<JapaneseCharacter>, String> {
+        Ok(vec![])
+    }
+
+    async fn get_traditional_chinese_texts(&self) -> Result<Vec<TraditionalChineseText>, String> {
+        Ok(vec![])
+    }
+
+    async fn get_bopomofo_keyboards(&self) -> Result<Vec<BopomofoKeyboard>, String> {
+        Ok(vec![])
+    }
+
+    async fn get_bopomofo_characters(&self) -> Result<Vec<BopomofoCharacter>, String> {
+        Ok(vec![])
+    }
 }
 
 /// MongoDB数据库实现
@@ -1705,6 +2107,102 @@ impl Database for MongoDatabase {
         }
         Ok(results)
     }
+
+    async fn get_japanese_texts(&self) -> Result<Vec<JapaneseText>, String> {
+        let db = self.get_db();
+        let collection = db.collection::<Document>("japanese_texts");
+        let mut cursor = collection.find(doc! {}, None).await
+            .map_err(|e| format!("Failed to query japanese_texts: {}", e))?;
+        let mut results = Vec::new();
+        while let Some(doc) = cursor.try_next().await.map_err(|e| e.to_string())? {
+            let id = doc.get_i32("id").unwrap_or(0);
+            let title = doc.get_str("title").unwrap_or("").to_string();
+            let content = doc.get_str("content").unwrap_or("").to_string();
+            let difficulty = doc.get_str("difficulty").unwrap_or("").to_string();
+            results.push(JapaneseText { id, title, content, difficulty });
+        }
+        Ok(results)
+    }
+
+    async fn get_japanese_keyboards(&self) -> Result<Vec<JapaneseKeyboard>, String> {
+        let db = self.get_db();
+        let collection = db.collection::<Document>("japanese_keyboards");
+        let mut cursor = collection.find(doc! {}, None).await
+            .map_err(|e| format!("Failed to query japanese_keyboards: {}", e))?;
+        let mut results = Vec::new();
+        while let Some(doc) = cursor.try_next().await.map_err(|e| e.to_string())? {
+            let id = doc.get_i32("id").unwrap_or(0);
+            let layout_name = doc.get_str("layout_name").unwrap_or("").to_string();
+            let description = doc.get_str("description").unwrap_or("").to_string();
+            results.push(JapaneseKeyboard { id, layout_name, description });
+        }
+        Ok(results)
+    }
+
+    async fn get_japanese_characters(&self) -> Result<Vec<JapaneseCharacter>, String> {
+        let db = self.get_db();
+        let collection = db.collection::<Document>("japanese_characters");
+        let mut cursor = collection.find(doc! {}, None).await
+            .map_err(|e| format!("Failed to query japanese_characters: {}", e))?;
+        let mut results = Vec::new();
+        while let Some(doc) = cursor.try_next().await.map_err(|e| e.to_string())? {
+            let id = doc.get_i32("id").unwrap_or(0);
+            let character = doc.get_str("character").unwrap_or("").to_string();
+            let romanji = doc.get_str("romanji").unwrap_or("").to_string();
+            let keyboard_key = doc.get_str("keyboard_key").unwrap_or("").to_string();
+            let layout_id = doc.get_i32("layout_id").unwrap_or(0);
+            results.push(JapaneseCharacter { id, character, romanji, keyboard_key, layout_id });
+        }
+        Ok(results)
+    }
+
+    async fn get_traditional_chinese_texts(&self) -> Result<Vec<TraditionalChineseText>, String> {
+        let db = self.get_db();
+        let collection = db.collection::<Document>("traditional_chinese_texts");
+        let mut cursor = collection.find(doc! {}, None).await
+            .map_err(|e| format!("Failed to query traditional_chinese_texts: {}", e))?;
+        let mut results = Vec::new();
+        while let Some(doc) = cursor.try_next().await.map_err(|e| e.to_string())? {
+            let id = doc.get_i32("id").unwrap_or(0);
+            let title = doc.get_str("title").unwrap_or("").to_string();
+            let content = doc.get_str("content").unwrap_or("").to_string();
+            let difficulty = doc.get_str("difficulty").unwrap_or("").to_string();
+            results.push(TraditionalChineseText { id, title, content, difficulty });
+        }
+        Ok(results)
+    }
+
+    async fn get_bopomofo_keyboards(&self) -> Result<Vec<BopomofoKeyboard>, String> {
+        let db = self.get_db();
+        let collection = db.collection::<Document>("bopomofo_keyboards");
+        let mut cursor = collection.find(doc! {}, None).await
+            .map_err(|e| format!("Failed to query bopomofo_keyboards: {}", e))?;
+        let mut results = Vec::new();
+        while let Some(doc) = cursor.try_next().await.map_err(|e| e.to_string())? {
+            let id = doc.get_i32("id").unwrap_or(0);
+            let layout_name = doc.get_str("layout_name").unwrap_or("").to_string();
+            let description = doc.get_str("description").unwrap_or("").to_string();
+            results.push(BopomofoKeyboard { id, layout_name, description });
+        }
+        Ok(results)
+    }
+
+    async fn get_bopomofo_characters(&self) -> Result<Vec<BopomofoCharacter>, String> {
+        let db = self.get_db();
+        let collection = db.collection::<Document>("bopomofo_characters");
+        let mut cursor = collection.find(doc! {}, None).await
+            .map_err(|e| format!("Failed to query bopomofo_characters: {}", e))?;
+        let mut results = Vec::new();
+        while let Some(doc) = cursor.try_next().await.map_err(|e| e.to_string())? {
+            let id = doc.get_i32("id").unwrap_or(0);
+            let character = doc.get_str("character").unwrap_or("").to_string();
+            let bopomofo = doc.get_str("bopomofo").unwrap_or("").to_string();
+            let keyboard_key = doc.get_str("keyboard_key").unwrap_or("").to_string();
+            let layout_id = doc.get_i32("layout_id").unwrap_or(0);
+            results.push(BopomofoCharacter { id, character, bopomofo, keyboard_key, layout_id });
+        }
+        Ok(results)
+    }
 }
 
 impl MongoDatabase {
@@ -1809,6 +2307,49 @@ impl Database for PostgresDatabase {
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS english_texts (
+                id SERIAL PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                difficulty VARCHAR(10) DEFAULT 'medium'
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS japanese_keyboards (
+                id SERIAL PRIMARY KEY,
+                layout_name VARCHAR(100) NOT NULL UNIQUE,
+                description TEXT
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS japanese_characters (
+                id SERIAL PRIMARY KEY,
+                "character" VARCHAR(10) NOT NULL,
+                romanji VARCHAR(50) NOT NULL,
+                keyboard_key VARCHAR(10) NOT NULL,
+                layout_id INT NOT NULL,
+                FOREIGN KEY (layout_id) REFERENCES japanese_keyboards(id)
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS japanese_texts (
                 id SERIAL PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
                 content TEXT NOT NULL,
@@ -2024,6 +2565,95 @@ impl Database for PostgresDatabase {
             }
         }
 
+        // 初始化日语键盘布局数据
+        let japanese_keyboard_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM japanese_keyboards")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if japanese_keyboard_count == 0 {
+            let keyboard_layouts = [
+                ("QWERTY Japanese", "标准QWERTY键盘的日语布局，使用罗马字输入"),
+            ];
+            
+            for (layout_name, description) in keyboard_layouts {
+                sqlx::query(
+                    "INSERT INTO japanese_keyboards (layout_name, description) VALUES ($1, $2)"
+                )
+                .bind(layout_name)
+                .bind(description)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        // 初始化日语字符数据
+        let japanese_character_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM japanese_characters")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if japanese_character_count == 0 {
+            let japanese_chars = [
+                ("あ", "a", "a", 1),
+                ("い", "i", "i", 1),
+                ("う", "u", "u", 1),
+                ("え", "e", "e", 1),
+                ("お", "o", "o", 1),
+                ("か", "ka", "k", 1),
+                ("き", "ki", "k", 1),
+                ("く", "ku", "k", 1),
+                ("け", "ke", "k", 1),
+                ("こ", "ko", "k", 1),
+                ("さ", "sa", "s", 1),
+                ("し", "shi", "s", 1),
+                ("す", "su", "s", 1),
+                ("せ", "se", "s", 1),
+                ("そ", "so", "s", 1),
+            ];
+            
+            for (character, romanji, keyboard_key, layout_id) in japanese_chars {
+                sqlx::query(
+                    "INSERT INTO japanese_characters (character, romanji, keyboard_key, layout_id) VALUES ($1, $2, $3, $4)"
+                )
+                .bind(character)
+                .bind(romanji)
+                .bind(keyboard_key)
+                .bind(layout_id)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        // 初始化日语文章数据
+        let japanese_text_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM japanese_texts")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if japanese_text_count == 0 {
+            let japanese_texts = [
+                ("基础练习", "あいうえおかきくけこさしすせそ", "easy"),
+                ("常用句子", "こんにちは、元気ですか？私は元気です。", "easy"),
+                ("进阶练习", "日本語の勉強は楽しいです。毎日勉強しています。", "medium"),
+                ("高级练习", "東京は日本の首都です。人口が多くてにぎやかです。", "hard"),
+            ];
+            
+            for (title, content, difficulty) in japanese_texts {
+                sqlx::query(
+                    "INSERT INTO japanese_texts (title, content, difficulty) VALUES ($1, $2, $3)"
+                )
+                .bind(title)
+                .bind(content)
+                .bind(difficulty)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
         let char_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM wubi_characters")
             .fetch_one(&self.pool)
             .await
@@ -2072,6 +2702,49 @@ impl Database for PostgresDatabase {
         .await
         .map_err(|e| e.to_string())?;
 
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS japanese_keyboards (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                layout_name VARCHAR(100) NOT NULL UNIQUE,
+                description TEXT
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS japanese_characters (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                `character` VARCHAR(10) NOT NULL,
+                romanji VARCHAR(50) NOT NULL,
+                keyboard_key VARCHAR(10) NOT NULL,
+                layout_id INT NOT NULL,
+                FOREIGN KEY (layout_id) REFERENCES japanese_keyboards(id)
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS japanese_texts (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                difficulty VARCHAR(10) DEFAULT 'medium'
+            )
+            "#
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
         let english_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM english_texts")
             .fetch_one(&self.pool)
             .await
@@ -2088,6 +2761,95 @@ impl Database for PostgresDatabase {
             for (title, content, difficulty) in english_texts {
                 sqlx::query(
                     "INSERT INTO english_texts (title, content, difficulty) VALUES ($1, $2, $3)"
+                )
+                .bind(title)
+                .bind(content)
+                .bind(difficulty)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        // 初始化日语键盘布局数据
+        let japanese_keyboard_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM japanese_keyboards")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if japanese_keyboard_count == 0 {
+            let keyboard_layouts = [
+                ("QWERTY Japanese", "标准QWERTY键盘的日语布局，使用罗马字输入"),
+            ];
+            
+            for (layout_name, description) in keyboard_layouts {
+                sqlx::query(
+                    "INSERT INTO japanese_keyboards (layout_name, description) VALUES ($1, $2)"
+                )
+                .bind(layout_name)
+                .bind(description)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        // 初始化日语字符数据
+        let japanese_character_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM japanese_characters")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if japanese_character_count == 0 {
+            let japanese_chars = [
+                ("あ", "a", "a", 1),
+                ("い", "i", "i", 1),
+                ("う", "u", "u", 1),
+                ("え", "e", "e", 1),
+                ("お", "o", "o", 1),
+                ("か", "ka", "k", 1),
+                ("き", "ki", "k", 1),
+                ("く", "ku", "k", 1),
+                ("け", "ke", "k", 1),
+                ("こ", "ko", "k", 1),
+                ("さ", "sa", "s", 1),
+                ("し", "shi", "s", 1),
+                ("す", "su", "s", 1),
+                ("せ", "se", "s", 1),
+                ("そ", "so", "s", 1),
+            ];
+            
+            for (character, romanji, keyboard_key, layout_id) in japanese_chars {
+                sqlx::query(
+                    "INSERT INTO japanese_characters (character, romanji, keyboard_key, layout_id) VALUES ($1, $2, $3, $4)"
+                )
+                .bind(character)
+                .bind(romanji)
+                .bind(keyboard_key)
+                .bind(layout_id)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+            }
+        }
+
+        // 初始化日语文章数据
+        let japanese_text_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM japanese_texts")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if japanese_text_count == 0 {
+            let japanese_texts = [
+                ("基础练习", "あいうえおかきくけこさしすせそ", "easy"),
+                ("常用句子", "こんにちは、元気ですか？私は元気です。", "easy"),
+                ("进阶练习", "日本語の勉強は楽しいです。毎日勉強しています。", "medium"),
+                ("高级练习", "東京は日本の首都です。人口が多くてにぎやかです。", "hard"),
+            ];
+            
+            for (title, content, difficulty) in japanese_texts {
+                sqlx::query(
+                    "INSERT INTO japanese_texts (title, content, difficulty) VALUES ($1, $2, $3)"
                 )
                 .bind(title)
                 .bind(content)
@@ -2433,6 +3195,78 @@ impl Database for PostgresDatabase {
         .map_err(|e| e.to_string())
         .map(|rows| rows.into_iter().map(|(id, title, content, difficulty)| EnglishText {
             id, title, content, difficulty
+        }).collect())
+    }
+
+    async fn get_japanese_texts(&self) -> Result<Vec<JapaneseText>, String> {
+        sqlx::query_as::<_, (i32, String, String, String)>(
+            "SELECT id, title, content, difficulty FROM japanese_texts ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, title, content, difficulty)| JapaneseText {
+            id, title, content, difficulty
+        }).collect())
+    }
+
+    async fn get_japanese_keyboards(&self) -> Result<Vec<JapaneseKeyboard>, String> {
+        sqlx::query_as::<_, (i32, String, String)>(
+            "SELECT id, layout_name, description FROM japanese_keyboards ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, layout_name, description)| JapaneseKeyboard {
+            id, layout_name, description
+        }).collect())
+    }
+
+    async fn get_japanese_characters(&self) -> Result<Vec<JapaneseCharacter>, String> {
+        sqlx::query_as::<_, (i32, String, String, String, i32)>(
+            "SELECT id, `character`, romanji, keyboard_key, layout_id FROM japanese_characters ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, character, romanji, keyboard_key, layout_id)| JapaneseCharacter {
+            id, character, romanji, keyboard_key, layout_id
+        }).collect())
+    }
+
+    async fn get_traditional_chinese_texts(&self) -> Result<Vec<TraditionalChineseText>, String> {
+        sqlx::query_as::<_, (i32, String, String, String)>(
+            "SELECT id, title, content, difficulty FROM traditional_chinese_texts ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, title, content, difficulty)| TraditionalChineseText {
+            id, title, content, difficulty
+        }).collect())
+    }
+
+    async fn get_bopomofo_keyboards(&self) -> Result<Vec<BopomofoKeyboard>, String> {
+        sqlx::query_as::<_, (i32, String, String)>(
+            "SELECT id, layout_name, description FROM bopomofo_keyboards ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, layout_name, description)| BopomofoKeyboard {
+            id, layout_name, description
+        }).collect())
+    }
+
+    async fn get_bopomofo_characters(&self) -> Result<Vec<BopomofoCharacter>, String> {
+        sqlx::query_as::<_, (i32, String, String, String, i32)>(
+            "SELECT id, `character`, bopomofo, keyboard_key, layout_id FROM bopomofo_characters ORDER BY id"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())
+        .map(|rows| rows.into_iter().map(|(id, character, bopomofo, keyboard_key, layout_id)| BopomofoCharacter {
+            id, character, bopomofo, keyboard_key, layout_id
         }).collect())
     }
 }

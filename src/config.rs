@@ -188,3 +188,53 @@ pub struct KeyRadical {
     pub formula: String,
     pub description: String,
 }
+
+/// 日语相关数据结构
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct JapaneseText {
+    pub id: i32,
+    pub title: String,
+    pub content: String,
+    pub difficulty: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct JapaneseKeyboard {
+    pub id: i32,
+    pub layout_name: String,
+    pub description: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct JapaneseCharacter {
+    pub id: i32,
+    pub character: String,
+    pub romanji: String,
+    pub keyboard_key: String,
+    pub layout_id: i32,
+}
+
+/// 繁体中文注音相关数据结构
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TraditionalChineseText {
+    pub id: i32,
+    pub title: String,
+    pub content: String,
+    pub difficulty: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BopomofoKeyboard {
+    pub id: i32,
+    pub layout_name: String,
+    pub description: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BopomofoCharacter {
+    pub id: i32,
+    pub character: String,
+    pub bopomofo: String,
+    pub keyboard_key: String,
+    pub layout_id: i32,
+}
