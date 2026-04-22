@@ -3,13 +3,22 @@
     <div class="practice-container">
       <div class="practice-header">
         <h2>繁体中文注音打字练习</h2>
-        <div class="difficulty-selector">
-          <label>难度：</label>
-          <a-select v-model:value="selectedDifficulty" @change="handleDifficultyChange">
-            <a-select-option value="easy">简单</a-select-option>
-            <a-select-option value="medium">中等</a-select-option>
-            <a-select-option value="hard">困难</a-select-option>
-          </a-select>
+        <div class="practice-controls">
+          <div class="difficulty-selector">
+            <label>难度：</label>
+            <a-select v-model:value="selectedDifficulty" @change="handleDifficultyChange">
+              <a-select-option value="easy">简单</a-select-option>
+              <a-select-option value="medium">中等</a-select-option>
+              <a-select-option value="hard">困难</a-select-option>
+            </a-select>
+          </div>
+          <div class="mode-selector">
+            <label>模式：</label>
+            <a-select v-model:value="selectedMode" @change="handleModeChange">
+              <a-select-option value="manual">手动打字</a-select-option>
+              <a-select-option value="auto">自动打字</a-select-option>
+            </a-select>
+          </div>
         </div>
       </div>
 
@@ -104,6 +113,7 @@ export default {
       bopomofoChars: [],
       currentText: { title: '', content: '', difficulty: 'medium' },
       selectedDifficulty: 'medium',
+      selectedMode: 'manual',
       userInput: '',
       currentIndex: 0,
       correctChars: [],
@@ -113,6 +123,7 @@ export default {
       speed: 0,
       timeElapsed: 0,
       timer: null,
+      autoTimer: null,
       showZhuyinHint: true
     };
   },
@@ -159,6 +170,33 @@ export default {
     handleDifficultyChange() {
       this.selectText();
     },
+    handleModeChange() {
+      this.resetPractice();
+    },
+    startAutoTyping() {
+      if (this.autoTimer) {
+        clearInterval(this.autoTimer);
+      }
+      
+      this.autoTimer = setInterval(() => {
+        if (this.currentIndex < this.currentText.content.length) {
+          this.userInput = this.currentText.content.substring(0, this.currentIndex + 1);
+          this.currentIndex++;
+          this.correctChars = new Array(this.currentIndex).fill(true);
+          
+          const correctCount = this.correctChars.filter(correct => correct).length;
+          this.accuracy = correctCount / this.currentIndex * 100;
+          
+          if (this.timeElapsed > 0) {
+            this.speed = Math.round((this.currentIndex / this.timeElapsed) * 60);
+          }
+          
+          if (this.currentIndex >= this.currentText.content.length) {
+            this.endPractice();
+          }
+        }
+      }, 200); // 每200毫秒自动输入一个字符
+    },
     getZhuyinHint(char) {
       const zhuyinMap = {
         '一': '一', '二': '二', '三': '三', '四': '四', '五': '五',
@@ -186,6 +224,10 @@ export default {
       this.timer = setInterval(() => {
         this.timeElapsed = Math.floor((Date.now() - this.startTime) / 1000);
       }, 1000);
+      
+      if (this.selectedMode === 'auto') {
+        this.startAutoTyping();
+      }
     },
     resetPractice() {
       this.userInput = '';
@@ -199,6 +241,10 @@ export default {
       if (this.timer) {
         clearInterval(this.timer);
         this.timer = null;
+      }
+      if (this.autoTimer) {
+        clearInterval(this.autoTimer);
+        this.autoTimer = null;
       }
     },
     handleInput() {
@@ -241,6 +287,10 @@ export default {
         clearInterval(this.timer);
         this.timer = null;
       }
+      if (this.autoTimer) {
+        clearInterval(this.autoTimer);
+        this.autoTimer = null;
+      }
 
       const correctCount = this.correctChars.filter(correct => correct).length;
       this.accuracy = Math.round((correctCount / this.currentText.content.length) * 100);
@@ -268,14 +318,30 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
 .practice-header h2 {
   margin: 0;
   color: #333;
+  flex: 1;
+}
+
+.practice-controls {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .difficulty-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mode-selector {
   display: flex;
   align-items: center;
   gap: 10px;

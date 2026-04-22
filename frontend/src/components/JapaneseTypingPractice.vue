@@ -53,13 +53,22 @@
           </div>
         </div>
         
-        <div class="difficulty-selector">
-          <span>难度选择:</span>
-          <a-radio-group v-model:value="selectedDifficulty" @change="changeDifficulty">
-            <a-radio-button value="easy">简单</a-radio-button>
-            <a-radio-button value="medium">中等</a-radio-button>
-            <a-radio-button value="hard">困难</a-radio-button>
-          </a-radio-group>
+        <div class="practice-controls">
+          <div class="difficulty-selector">
+            <span>难度选择:</span>
+            <a-radio-group v-model:value="selectedDifficulty" @change="changeDifficulty">
+              <a-radio-button value="easy">简单</a-radio-button>
+              <a-radio-button value="medium">中等</a-radio-button>
+              <a-radio-button value="hard">困难</a-radio-button>
+            </a-radio-group>
+          </div>
+          <div class="mode-selector">
+            <span>模式选择:</span>
+            <a-radio-group v-model:value="selectedMode" @change="handleModeChange">
+              <a-radio-button value="manual">手动打字</a-radio-button>
+              <a-radio-button value="auto">自动打字</a-radio-button>
+            </a-radio-group>
+          </div>
         </div>
       </div>
     </a-card>
@@ -82,6 +91,8 @@ const correctCount = ref(0);
 const startTime = ref(Date.now());
 const completedCount = ref(0);
 const selectedDifficulty = ref('easy');
+const selectedMode = ref('manual');
+const autoTimer = ref(null);
 const isLoading = ref(true);
 
 const currentText = computed(() => {
@@ -186,11 +197,73 @@ const nextText = () => {
   userInput.value = '';
   startTime.value = Date.now();
   
+  // 清除自动打字定时器
+  if (autoTimer.value) {
+    clearInterval(autoTimer.value);
+    autoTimer.value = null;
+  }
+  
   // 更新虚拟键盘状态
   if (japaneseTexts.value.length > 0) {
     const firstChar = currentText.value.content[0];
     setKeyboard({ activeKey: firstChar });
   }
+  
+  // 如果是自动打字模式，开始自动打字
+  if (selectedMode.value === 'auto') {
+    startAutoTyping();
+  }
+};
+
+const handleModeChange = () => {
+  // 重置练习状态
+  correctCount.value = 0;
+  userInput.value = '';
+  startTime.value = Date.now();
+  
+  // 清除自动打字定时器
+  if (autoTimer.value) {
+    clearInterval(autoTimer.value);
+    autoTimer.value = null;
+  }
+  
+  // 如果是自动打字模式，开始自动打字
+  if (selectedMode.value === 'auto') {
+    startAutoTyping();
+  }
+};
+
+const startAutoTyping = () => {
+  // 清除之前的定时器
+  if (autoTimer.value) {
+    clearInterval(autoTimer.value);
+  }
+  
+  // 设置自动打字定时器，每200毫秒输入一个字符
+  autoTimer.value = setInterval(() => {
+    if (correctCount.value < currentText.value.content.length) {
+      const nextChar = currentText.value.content[correctCount.value];
+      userInput.value += nextChar;
+      
+      // 更新正确计数
+      correctCount.value++;
+      
+      // 更新虚拟键盘状态
+      if (correctCount.value < currentText.value.content.length) {
+        const nextNextChar = currentText.value.content[correctCount.value];
+        setKeyboard({ activeKey: nextNextChar });
+      } else {
+        setKeyboard({ activeKey: null });
+        completedCount.value++;
+      }
+    } else {
+      // 清除定时器
+      if (autoTimer.value) {
+        clearInterval(autoTimer.value);
+        autoTimer.value = null;
+      }
+    }
+  }, 200);
 };
 
 onMounted(() => {
@@ -299,16 +372,29 @@ onMounted(() => {
   color: #1890ff;
 }
 
-.difficulty-selector {
+.practice-controls {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 20px;
   padding: 16px;
   background-color: #f9f9f9;
   border-radius: 8px;
 }
 
-.difficulty-selector span {
+.difficulty-selector {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mode-selector {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.difficulty-selector span,
+.mode-selector span {
   font-weight: 500;
   color: #666;
 }
@@ -327,9 +413,16 @@ onMounted(() => {
     gap: 12px;
   }
   
-  .difficulty-selector {
+  .practice-controls {
     flex-direction: column;
     align-items: flex-start;
+  }
+  
+  .difficulty-selector,
+  .mode-selector {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
   }
 }
 </style>
