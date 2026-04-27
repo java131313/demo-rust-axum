@@ -196,6 +196,7 @@ pub struct JapaneseText {
     pub title: String,
     pub content: String,
     pub difficulty: String,
+    pub r#type: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -237,4 +238,25 @@ pub struct BopomofoCharacter {
     pub bopomofo: String,
     pub keyboard_key: String,
     pub layout_id: i32,
+}
+
+/// 日语五十音相关数据结构
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct JapaneseGojuon {
+    pub id: i32,
+    pub character: String,
+    pub romanji: String,
+    pub row: String,
+    pub column: String,
+    pub pronunciation: String,
+}
+
+/// 日语汉字相关数据结构
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct JapaneseKanji {
+    pub id: i32,
+    pub kanji: String,
+    pub reading: String,
+    pub meaning: String,
+    pub level: String,
 }

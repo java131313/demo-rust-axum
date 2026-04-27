@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3003/api',
+  baseURL: 'http://localhost:3000/api',
   timeout: 10000,
 });
 
@@ -42,6 +42,21 @@ export const getEnglishTexts = () => {
 // 获取日语练习文章
 export const getJapaneseTexts = () => {
   return api.get('/japanese-texts');
+};
+
+// 获取自定义文章
+export const getCustomArticles = () => {
+  return api.get('/custom-articles');
+};
+
+// 创建自定义文章
+export const createCustomArticle = (data) => {
+  return api.post('/custom-articles', data);
+};
+
+// 删除自定义文章
+export const deleteCustomArticle = (id) => {
+  return api.delete(`/custom-articles/${id}`);
 };
 
 // 获取日语键盘布局

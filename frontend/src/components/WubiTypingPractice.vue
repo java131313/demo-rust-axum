@@ -42,20 +42,25 @@
 
       <!-- 文章选择 -->
       <div class="article-selection">
-        <a-select 
-          v-model:value="selectedArticleId" 
-          placeholder="选择练习文章"
-          style="width: 100%; margin-bottom: 16px;"
-          @change="handleArticleChange"
-        >
-          <a-select-option 
-            v-for="article in articles" 
-            :key="article.id" 
-            :value="article.id"
+        <a-space style="width: 100%; margin-bottom: 16px;">
+          <a-select
+            v-model:value="selectedArticleId"
+            placeholder="选择练习文章"
+            style="width: 320px;"
+            @change="handleArticleChange"
           >
-            {{ article.title }} ({{ article.difficulty }})
-          </a-select-option>
-        </a-select>
+            <a-select-option
+              v-for="article in articles"
+              :key="article.id"
+              :value="article.id"
+            >
+              {{ article.title }} ({{ article.difficulty }})
+            </a-select-option>
+          </a-select>
+          <a-button @click="showCustomArticleModal = true" type="dashed">
+            添加自定义文章
+          </a-button>
+        </a-space>
       </div>
       
       <!-- 原文显示 -->
@@ -155,32 +160,34 @@
       </div>
     </a-card>
     
-    <!-- 字根表卡片 -->
-    <a-card class="wubi-roots-card" title="五笔字根表">
-      <div class="wubi-search">
-        <a-input-search
-          v-model:value="searchCharacter"
-          placeholder="输入汉字查询五笔编码"
-          enter-button
-          @search="searchWubiRoot"
-        />
-      </div>
-      
-      <div v-if="searchError" class="search-result">
-        <a-alert message="无法查询" type="warning" :description="searchError" show-icon />
-      </div>
-      <div v-else-if="searchResult" class="search-result">
-        <a-alert
-          message="查询结果"
-          type="info"
-          :description="wubiSearchResultDescription"
-          show-icon
-        />
-      </div>
-      
-      <!-- 使用G6展示字根关系图 -->
-      <WubiGraph :wubiRoots="wubiRoots" />
-    </a-card>
+
+    <!-- 添加自定义文章弹窗 -->
+    <a-modal
+      v-model:open="showCustomArticleModal"
+      title="添加自定义简体中文文章"
+      @ok="handleSaveCustomArticle"
+      @cancel="closeCustomArticleModal"
+      :confirm-loading="isSavingCustomArticle"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="文章标题" required>
+          <a-input
+            v-model:value="customArticleTitle"
+            placeholder="请输入文章标题"
+            maxlength="50"
+          />
+        </a-form-item>
+        <a-form-item label="文章内容" required>
+          <a-textarea
+            v-model:value="customArticleContent"
+            placeholder="请输入简体中文文章内容"
+            :auto-size="{ minRows: 4, maxRows: 8 }"
+            maxlength="2000"
+            show-count
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
@@ -237,7 +244,12 @@ export default {
       typingSpeed: 250, // 毫秒
       isAutoTyping: false,
       isPaused: false,
-      autoTimer: null
+      autoTimer: null,
+      // 自定义文章相关
+      showCustomArticleModal: false,
+      customArticleTitle: '',
+      customArticleContent: '',
+      isSavingCustomArticle: false,
     };
   },
   computed: {
@@ -356,36 +368,74 @@ export default {
     async loadData() {
       try {
         // 并行加载数据，但分别处理错误
-        const [articlesRes, wubiRootsRes] = await Promise.all([
+        const [articlesRes, customRes, wubiRootsRes] = await Promise.all([
           axios.get('/api/articles').catch(error => {
             console.error('加载文章失败:', error);
-            return { data: [] }; // 返回空数组作为默认值
+            return { data: [] };
+          }),
+          axios.get('/api/custom-articles').catch(error => {
+            console.error('加载自定义文章失败:', error);
+            return { data: [] };
           }),
           axios.get('/api/wubi-roots').catch(error => {
             console.error('加载字根失败:', error);
-            return { data: [] }; // 返回空数组作为默认值
+            return { data: [] };
           })
         ]);
-        
-        console.log('API响应 - 文章:', articlesRes.data);
-        console.log('API响应 - 字根:', wubiRootsRes.data);
-        
-        // axios 响应拦截器可能修改了data，确保获取正确的数据
-        const articlesData = articlesRes.data || articlesRes;
+
+        const systemArticles = articlesRes.data || [];
+        const customArticles = (customRes.data || []).map(a => ({
+          ...a,
+          difficulty: a.difficulty === 'custom' ? '自定义' : a.difficulty,
+        }));
+        this.articles = [...systemArticles, ...customArticles];
+
         const wubiRootsData = wubiRootsRes.data || wubiRootsRes;
-        
-        // 如果返回的数据在data属性中（axios标准格式）
-        this.articles = Array.isArray(articlesData) ? articlesData : (articlesData.data || []);
         this.wubiRoots = Array.isArray(wubiRootsData) ? wubiRootsData : (wubiRootsData.data || []);
-        
-        console.log('处理后的文章数据:', this.articles);
-        
+
         if (this.articles.length > 0) {
           this.selectedArticleId = this.articles[0].id;
           this.currentArticle = this.articles[0];
         }
       } catch (error) {
         console.error('加载数据失败:', error);
+      }
+    },
+    closeCustomArticleModal() {
+      this.showCustomArticleModal = false;
+      this.customArticleTitle = '';
+      this.customArticleContent = '';
+    },
+    async handleSaveCustomArticle() {
+      const title = this.customArticleTitle.trim();
+      const content = this.customArticleContent.trim();
+      if (!title) {
+        this.$message?.warning('请输入文章标题');
+        return;
+      }
+      if (!content) {
+        this.$message?.warning('请输入文章内容');
+        return;
+      }
+      this.isSavingCustomArticle = true;
+      try {
+        await axios.post('/api/custom-articles', {
+          title,
+          content,
+          difficulty: 'custom',
+        });
+        this.$message?.success('自定义文章添加成功');
+        this.closeCustomArticleModal();
+        await this.loadData();
+        if (this.articles.length > 0) {
+          this.selectedArticleId = this.articles[this.articles.length - 1].id;
+          this.handleArticleChange(this.selectedArticleId);
+        }
+      } catch (error) {
+        console.error('保存自定义文章失败:', error);
+        this.$message?.error('保存失败，请重试');
+      } finally {
+        this.isSavingCustomArticle = false;
       }
     },
     handleArticleChange(value) {
@@ -722,9 +772,7 @@ export default {
 
 <style scoped>
 .wubi-practice-container {
-  display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 20px;
+  display: block;
 }
 
 .practice-card {

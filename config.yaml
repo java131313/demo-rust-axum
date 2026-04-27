@@ -1,29 +1,29 @@
 # Application Configuration
 server:
   host: "0.0.0.0"
-  port: 3003
+  port: 3000
   log_level: "info"
 
 database:
   # 数据库类型: "mysql" 或 "postgres" 或 "redis" 或 "mongo"
-  type: "mysql"
-  
+  type: "postgres"
+
   # MySQL配置
   mysql:
     host: "127.0.0.1"
     port: 3306
     username: "root"
     password: "sdsSDG123*^DD"
-    database: "wubi_demo_pg"
+    database: "wubi"
     max_connections: 10
-    
-  # PostgreSQL配置（生产环境使用）
+
+  # PostgreSQL配置
   postgres:
     host: "127.0.0.1"
-    port: 5433
-    username: "postgres"
-    password: "password"
-    database: "wubi_demo"
+    port: 5432
+    username: "root"
+    password: "root"
+    database: "wubi"
     max_connections: 10
     
   # Redis配置（缓存存储）

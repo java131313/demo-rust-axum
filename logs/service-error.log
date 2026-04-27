@@ -34,3 +34,895 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 thread 'main' (2399971) panicked at src/main.rs:104:81:
 called `Result::unwrap()` on an `Err` value: Os { code: 48, kind: AddrInUse, message: "Address already in use" }
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (4776) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (8736) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (9350) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (10134) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (10692) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (11123) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (11732) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (12142) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (12356) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (12580) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (12788) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (13497) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (14009) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (14225) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (14542) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (14756) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (14992) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (15274) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (15401) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (15629) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (15749) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (16051) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (16122) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (16265) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (16475) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (16555) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (17151) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (17787) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (17950) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (18292) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (18877) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (19314) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (19484) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (19888) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (20455) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (20960) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (21341) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (21540) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (22079) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (22677) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (23169) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (23308) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (23876) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (24242) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (24406) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (25164) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (25824) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (26095) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (26607) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (27273) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (27796) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (28050) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (28815) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (29345) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (29682) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (29824) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (30554) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (31277) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (31504) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (32014) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (32358) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (32571) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (32719) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (33526) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (34086) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (34208) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (34912) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (35539) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (35753) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (36316) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (36752) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (36997) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (37187) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (37355) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (37842) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (38038) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (38172) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (38938) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (39472) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (39641) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (40104) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (40512) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (40657) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (41146) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (41835) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (42224) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (42372) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (43155) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (43404) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (43552) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (44120) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (44950) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (45526) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (46072) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (46265) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (46485) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (46673) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (46895) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (47021) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (47140) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (47229) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (47326) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (47474) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (47579) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (47662) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (47775) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (47995) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (48151) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (48703) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (51323) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (51744) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (51937) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (52119) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (52253) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (52408) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (52588) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (52742) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (52867) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (53287) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (53450) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (53707) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (53969) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (54549) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (56930) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (57153) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (57244) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (57831) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (59243) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (59686) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (60262) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (61214) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (61367) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (61513) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (61728) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (61853) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (62035) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (63749) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (64128) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (65028) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (65467) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (65683) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (65955) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (66213) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (66575) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (67385) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (68158) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (68400) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (68964) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (69677) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (70906) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (71129) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (71259) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (71402) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (71880) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (72149) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (72846) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (73008) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (73192) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (73798) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (73936) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (74158) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (74401) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (74692) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (74870) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (75226) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (75962) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (76367) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (76524) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (76795) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (76996) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (77143) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (77292) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (77443) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (77621) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (77784) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (77902) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (78061) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (79294) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (79400) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (80033) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (80838) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (81810) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (82567) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (82984) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (83214) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (83644) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (84244) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (84570) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (84920) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (85087) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (85434) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (85690) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (86095) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (86460) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (86586) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (87945) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (88571) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (89195) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (90432) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (91622) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (92278) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (92965) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (93097) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (93461) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (93780) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (93972) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (94082) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (94394) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (95219) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (95329) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (95484) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (95815) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (96589) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (97348) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (98881) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (100050) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (100718) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (101984) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (102680) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (103484) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (104245) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (105006) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'main' (106293) panicked at src/main.rs:70:18:
+failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

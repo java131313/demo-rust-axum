@@ -2,7 +2,7 @@
 use axum::routing::*;
 use axum::middleware;
 
-use crate::wubi::{AppState, create_lesson, get_lesson, get_lessons, health, post_progress, get_articles, get_article, create_article, update_article, delete_article, get_wubi_roots, get_wubi_root, create_wubi_root, search_wubi_root, get_wubi_code, update_wubi_code_handler, login, logout, register, auth_middleware, get_key_radicals, get_key_radical_by_key, get_english_texts, get_japanese_texts, get_japanese_keyboards, get_japanese_characters, get_traditional_chinese_texts, get_bopomofo_keyboards, get_bopomofo_characters};
+use crate::wubi::{AppState, create_lesson, get_lesson, get_lessons, health, post_progress, get_articles, get_article, create_article, update_article, delete_article, get_custom_articles, create_custom_article, delete_custom_article, get_wubi_roots, get_wubi_root, create_wubi_root, search_wubi_root, get_wubi_code, update_wubi_code_handler, login, logout, register, auth_middleware, get_key_radicals, get_key_radical_by_key, get_english_texts, get_japanese_texts, get_japanese_keyboards, get_japanese_characters, get_traditional_chinese_texts, get_bopomofo_keyboards, get_bopomofo_characters, get_japanese_gojuon, get_japanese_kanji, get_japanese_kanji_by_char};
 
 /// Use HashMap to deserialize a HTTP GET query into a key-value map.
 /// axum extracts query parameters by using `axum::extract::Query`.
@@ -51,6 +51,8 @@ pub fn app(state: AppState) -> axum::Router {
         .route("/api/progress", post(post_progress))
         .route("/api/articles", get(get_articles).post(create_article))
         .route("/api/articles/{id}", get(get_article).put(update_article).delete(delete_article))
+        .route("/api/custom-articles", get(get_custom_articles).post(create_custom_article))
+        .route("/api/custom-articles/{id}", delete(delete_custom_article))
         .route("/api/wubi-roots", get(get_wubi_roots).post(create_wubi_root))
         .route("/api/wubi-roots/{id}", get(get_wubi_root))
         .route("/api/search-wubi-root/{character}", get(search_wubi_root))
@@ -65,6 +67,9 @@ pub fn app(state: AppState) -> axum::Router {
         .route("/api/traditional-chinese-texts", get(get_traditional_chinese_texts))
         .route("/api/bopomofo-keyboards", get(get_bopomofo_keyboards))
         .route("/api/bopomofo-characters", get(get_bopomofo_characters))
+        .route("/api/japanese-gojuon", get(get_japanese_gojuon))
+        .route("/api/japanese-kanji", get(get_japanese_kanji))
+        .route("/api/japanese-kanji/{kanji}", get(get_japanese_kanji_by_char))
         .route("/api/login", post(login))
         .route("/api/logout", post(logout))
         .route("/api/register", post(register))

@@ -2,6 +2,14 @@
   <div class="japanese-typing-practice">
     <a-card title="日语打字练习" class="typing-card">
       <div class="practice-content">
+        <div class="tab-container">
+          <a-tabs v-model:activeKey="selectedTab" @change="handleTabChange">
+            <a-tab-pane key="hiragana" tab="平假名"></a-tab-pane>
+            <a-tab-pane key="katakana" tab="片假名"></a-tab-pane>
+            <a-tab-pane key="kanji" tab="汉字"></a-tab-pane>
+            <a-tab-pane key="mixed" tab="混合"></a-tab-pane>
+          </a-tabs>
+        </div>
         <div class="text-container">
           <h3>{{ currentText.title }}</h3>
           <div class="text-display">
@@ -86,12 +94,14 @@ const { activeTabKey } = inject('homeTabs', {});
 
 const userInput = ref('');
 const japaneseTexts = ref([]);
+const originalJapaneseTexts = ref([]);
 const currentTextIndex = ref(0);
 const correctCount = ref(0);
 const startTime = ref(Date.now());
 const completedCount = ref(0);
 const selectedDifficulty = ref('easy');
 const selectedMode = ref('manual');
+const selectedTab = ref('hiragana');
 const autoTimer = ref(null);
 const isLoading = ref(true);
 
@@ -129,9 +139,9 @@ const loadJapaneseTexts = async () => {
   try {
     isLoading.value = true;
     const response = await getJapaneseTexts();
-    japaneseTexts.value = response.data;
-    if (japaneseTexts.value.length > 0) {
-      filterTextsByDifficulty();
+    originalJapaneseTexts.value = response.data;
+    if (originalJapaneseTexts.value.length > 0) {
+      filterTextsByTab();
     }
   } catch (error) {
     message.error('加载日语文章失败');
@@ -139,6 +149,45 @@ const loadJapaneseTexts = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const filterTextsByTab = () => {
+  let filtered = [...originalJapaneseTexts.value];
+  
+  // 首先根据难度过滤
+  if (selectedDifficulty.value !== 'all') {
+    filtered = filtered.filter(text => text.difficulty === selectedDifficulty.value);
+  }
+  
+  // 然后根据选中的tab过滤
+  switch (selectedTab.value) {
+    case 'hiragana':
+      // 只包含平假名
+      filtered = filtered.filter(text => text.type === 'hiragana');
+      break;
+    case 'katakana':
+      // 只包含片假名
+      filtered = filtered.filter(text => text.type === 'katakana');
+      break;
+    case 'kanji':
+      // 只包含汉字
+      filtered = filtered.filter(text => text.type === 'kanji');
+      break;
+    case 'mixed':
+      // 包含混合内容
+      filtered = filtered.filter(text => text.type === 'mixed');
+      break;
+  }
+  
+  japaneseTexts.value = filtered;
+  currentTextIndex.value = 0;
+  correctCount.value = 0;
+  userInput.value = '';
+  startTime.value = Date.now();
+};
+
+const handleTabChange = () => {
+  filterTextsByTab();
 };
 
 const filterTextsByDifficulty = () => {
@@ -152,11 +201,7 @@ const filterTextsByDifficulty = () => {
 };
 
 const changeDifficulty = () => {
-  currentTextIndex.value = 0;
-  correctCount.value = 0;
-  userInput.value = '';
-  startTime.value = Date.now();
-  loadJapaneseTexts();
+  filterTextsByTab();
 };
 
 const handleInput = () => {
@@ -239,7 +284,7 @@ const startAutoTyping = () => {
     clearInterval(autoTimer.value);
   }
   
-  // 设置自动打字定时器，每200毫秒输入一个字符
+  // 设置自动打字定时器，每3000毫秒输入一个字符（默认很慢的速度）
   autoTimer.value = setInterval(() => {
     if (correctCount.value < currentText.value.content.length) {
       const nextChar = currentText.value.content[correctCount.value];
@@ -263,7 +308,7 @@ const startAutoTyping = () => {
         autoTimer.value = null;
       }
     }
-  }, 200);
+  }, 3000);
 };
 
 onMounted(() => {
@@ -297,6 +342,10 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.tab-container {
+  margin-bottom: 10px;
 }
 
 .text-container {

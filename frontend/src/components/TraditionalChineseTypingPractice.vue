@@ -62,20 +62,11 @@
 
       <div class="bopomofo-keyboard">
         <h3>注音键盘提示</h3>
-        <div class="keyboard-grid">
-          <div v-if="bopomofoChars.length === 0" class="no-data">
-            加载中...
-          </div>
-          <div
-            v-for="(char, index) in bopomofoChars"
-            :key="char.id"
-            class="keyboard-key"
-          >
-            <span class="key-char">{{ char.character }}</span>
-            <span class="key-bopomofo">{{ char.bopomofo }}</span>
-            <span class="key-binding">{{ char.keyboard_key }}</span>
-          </div>
-        </div>
+        <VirtualKeyboard
+          :keyboard-type="'bopomofo'"
+          :active-key="currentBopomofoKey"
+          class="virtual-keyboard-embedded"
+        />
       </div>
 
       <div class="stats">
@@ -104,9 +95,13 @@
 
 <script>
 import axios from '../api';
+import VirtualKeyboard from './VirtualKeyboard.vue';
 
 export default {
   name: 'TraditionalChineseTypingPractice',
+  components: {
+    VirtualKeyboard
+  },
   data() {
     return {
       texts: [],
@@ -126,6 +121,29 @@ export default {
       autoTimer: null,
       showZhuyinHint: true
     };
+  },
+  computed: {
+    bopomofoToKeyMap() {
+      const map = {};
+      this.bopomofoChars.forEach(c => {
+        map[c.character] = c.keyboard_key.toLowerCase();
+      });
+      return map;
+    },
+    currentBopomofoKey() {
+      if (this.currentIndex < this.currentText.content.length) {
+        const currentChar = this.currentText.content[this.currentIndex];
+        // 获取当前字符的注音符号
+        const zhuyin = this.getZhuyinHint(currentChar);
+        if (zhuyin) {
+          // 注音符号可能包含多个字符（如"ㄋㄧ"），取第一个字符
+          const firstZhuyin = zhuyin[0];
+          // 在映射中查找键盘键
+          return this.bopomofoToKeyMap[firstZhuyin];
+        }
+      }
+      return null;
+    }
   },
   mounted() {
     this.loadTexts();
@@ -431,46 +449,22 @@ export default {
   font-size: 16px;
 }
 
-.keyboard-grid {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 8px;
-  display: grid !important;
+.virtual-keyboard-embedded {
+  margin-top: 10px;
 }
 
-.keyboard-key {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 4px;
-  background: #f0f0f0;
-  border-radius: 4px;
-  border: 1px solid #d9d9d9;
-  min-width: 50px;
-  display: flex !important;
-  visibility: visible !important;
-  opacity: 1 !important;
+.virtual-keyboard-embedded :deep(.virtual-keyboard) {
+  background: transparent;
+  padding: 0;
+  margin: 0;
 }
 
-.keyboard-key .key-char {
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
+.virtual-keyboard-embedded :deep(.keyboard-header) {
+  display: none;
 }
 
-.keyboard-key .key-bopomofo {
-  font-size: 12px;
-  color: #666;
-  margin-top: 2px;
-}
-
-.keyboard-key .key-binding {
-  font-size: 11px;
-  color: #999;
-  margin-top: 2px;
-  background: #e0e0e0;
-  padding: 1px 4px;
-  border-radius: 2px;
+.virtual-keyboard-embedded :deep(.finger-legend) {
+  display: none;
 }
 
 .input-area {

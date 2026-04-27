@@ -21,9 +21,10 @@
 //! For more see the file `README.md` in the project root.
 
 pub mod app;
-pub mod wubi;
 pub mod config;
 pub mod db;
+pub mod wubi;
+pub mod wubi_dict;
 
 /// See file book.rs, which defines the `Book` struct.
 mod book;
@@ -31,22 +32,22 @@ mod book;
 /// See file data.rs, which defines the DATA global variable.
 mod data;
 
+use crate::db::Database;
+use std::sync::Arc;
+use tower_http::cors::{Any, CorsLayer};
 /// Use tracing crates for application-level tracing output.
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use tower_http::cors::{CorsLayer, Any};
-use std::sync::Arc;
-use crate::db::Database;
 
-#[tokio::main]  
+#[tokio::main]
 async fn main() {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .init();
     tracing::event!(tracing::Level::INFO, "main");
 
-    let config = crate::config::AppConfig::from_file("config.yaml")
-        .expect("failed to load config.yaml");
-    
+    let config =
+        crate::config::AppConfig::from_file("config.yaml").expect("failed to load config.yaml");
+
     println!("Database type: {}", config.get_db_type());
     println!("Server address: {}", config.server_address());
 
@@ -56,7 +57,7 @@ async fn main() {
             let pool = sqlx::mysql::MySqlPool::connect(&database_url)
                 .await
                 .expect("failed to connect to MySQL database");
-            
+
             let db = crate::db::MySqlDatabase::new(pool);
             db.init_db().await.expect("failed to initialize database");
             Arc::new(db)
@@ -67,15 +68,15 @@ async fn main() {
             let pool = sqlx::postgres::PgPool::connect(&database_url)
                 .await
                 .expect("failed to connect to PostgreSQL database");
-            
+
             let db = crate::db::PostgresDatabase::new(pool);
             db.init_db().await.expect("failed to initialize database");
             Arc::new(db)
         }
         "redis" => {
             let redis_url = config.database.redis.url.clone();
-            let db = crate::db::RedisDatabase::new(&redis_url)
-                .expect("failed to create Redis client");
+            let db =
+                crate::db::RedisDatabase::new(&redis_url).expect("failed to create Redis client");
             db.init_db().await.expect("failed to initialize Redis");
             Arc::new(db)
         }
@@ -101,7 +102,9 @@ async fn main() {
 
     let app = app.layer(cors);
 
-    let listener = tokio::net::TcpListener::bind(config.server_address()).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(config.server_address())
+        .await
+        .unwrap();
     println!("Server listening on {}", config.server_address());
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
