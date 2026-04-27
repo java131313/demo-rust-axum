@@ -5,21 +5,6 @@
         <span>五笔打字练习</span>
       </template>
       
-      <!-- 练习统计 -->
-      <div class="stats-container">
-        <a-row :gutter="16">
-          <a-col :span="8">
-            <a-statistic title="时间" :value="formatTime(elapsedTime)" />
-          </a-col>
-          <a-col :span="8">
-            <a-statistic title="准确率" :value="accuracy" suffix="%" />
-          </a-col>
-          <a-col :span="8">
-            <a-statistic title="速度" :value="speed" suffix="字/分钟" />
-          </a-col>
-        </a-row>
-      </div>
-      
       <!-- 模式选择和速度控制 -->
       <div class="mode-control">
         <a-space>
@@ -78,51 +63,46 @@
           </span>
         </div>
       </div>
-      
-      <!-- 五笔编码提示 -->
-      <div class="wubi-hint-section" v-if="currentCharacter || wubiCodeError || isLoadingWubiCode">
-        <a-alert
-          v-if="currentWubiCode"
-          :message="`当前字符: ${currentCharacter}`"
-          :description="`五笔编码: ${currentWubiCode.full_code}`"
-          type="info"
-          show-icon
-          style="margin-bottom: 16px;"
-        />
-        <a-alert
-          v-else-if="isLoadingWubiCode"
-          message="正在查询五笔编码..."
-          type="info"
-          show-icon
-          style="margin-bottom: 16px;"
-        />
-        <a-alert
-          v-else-if="wubiCodeError"
-          :message="wubiCodeError"
-          type="warning"
-          show-icon
-          style="margin-bottom: 16px;"
-        />
-      </div>
 
       <!-- 输入区域 -->
       <div class="input-section">
+        <!-- 五笔编码提示 -->
+        <div class="wubi-hint-bar" v-if="currentCharacter || wubiCodeError || isLoadingWubiCode">
+          <a-alert
+            v-if="currentWubiCode"
+            :message="`当前: ${currentCharacter} | 编码: ${currentWubiCode.full_code}`"
+            type="info"
+            show-icon
+          />
+          <a-alert
+            v-else-if="isLoadingWubiCode"
+            message="正在查询五笔编码..."
+            type="info"
+            show-icon
+          />
+          <a-alert
+            v-else-if="wubiCodeError"
+            :message="wubiCodeError"
+            type="warning"
+            show-icon
+          />
+        </div>
         <!-- 自动演示显示框 -->
         <div v-if="practiceMode === 'auto'" class="auto-display">
           <a-textarea
             v-model:value="userInput"
             placeholder="自动演示中..."
-            :auto-size="{ minRows: 4, maxRows: 6 }"
+            :auto-size="{ minRows: 8, maxRows: 12 }"
             disabled
             style="margin-bottom: 16px;"
           />
         </div>
-        
+
         <!-- 手动输入框 -->
         <a-textarea
           v-model:value="userInput"
           placeholder="请在此输入文字进行练习..."
-          :auto-size="{ minRows: 4, maxRows: 6 }"
+          :auto-size="{ minRows: 8, maxRows: 12 }"
           @focus="startTypingPractice"
           @input="handleUserInput"
           style="margin-top: 16px;"
@@ -135,28 +115,43 @@
           <a-button @click="resetPractice" type="primary" danger>
             重新开始
           </a-button>
-          <a-button 
-            v-if="practiceMode === 'auto' && !isAutoTyping" 
-            @click="startAutoTyping" 
+          <a-button
+            v-if="practiceMode === 'auto' && !isAutoTyping"
+            @click="startAutoTyping"
             type="primary"
           >
             开始演示
           </a-button>
-          <a-button 
-            v-if="practiceMode === 'auto' && isAutoTyping" 
-            @click="pauseAutoTyping" 
+          <a-button
+            v-if="practiceMode === 'auto' && isAutoTyping"
+            @click="pauseAutoTyping"
             type="primary"
           >
             暂停
           </a-button>
-          <a-button 
-            v-if="practiceMode === 'auto' && isAutoTyping" 
-            @click="resumeAutoTyping" 
+          <a-button
+            v-if="practiceMode === 'auto' && isAutoTyping"
+            @click="resumeAutoTyping"
             type="primary"
           >
             继续
           </a-button>
         </a-space>
+      </div>
+
+      <!-- 练习统计 -->
+      <div class="stats-container">
+        <a-row :gutter="16">
+          <a-col :span="8">
+            <a-statistic title="时间" :value="formatTime(elapsedTime)" />
+          </a-col>
+          <a-col :span="8">
+            <a-statistic title="准确率" :value="accuracy" suffix="%" />
+          </a-col>
+          <a-col :span="8">
+            <a-statistic title="速度" :value="speed" suffix="字/分钟" />
+          </a-col>
+        </a-row>
       </div>
     </a-card>
     
@@ -310,7 +305,7 @@ export default {
       if (r.pinyin) parts.push(`拼音：${r.pinyin}`);
       if (r.remark) parts.push(`备注：${r.remark}`);
       return parts.join('；');
-    }
+    },
   },
   watch: {
     practiceMode() {
@@ -779,10 +774,6 @@ export default {
   width: 100%;
 }
 
-.wubi-roots-card {
-  width: 100%;
-}
-
 .stats-container {
   margin-bottom: 20px;
 }
@@ -803,11 +794,32 @@ export default {
   background-color: #f9f9f9;
   border: 1px solid #ddd;
   border-radius: 4px;
-  min-height: 100px;
-  max-height: 200px;
+  min-height: 200px;
+  max-height: 430px;
   overflow-y: auto;
   line-height: 1.8;
-  font-size: 16px;
+  font-size: 18px;
+  scrollbar-width: thin;
+  scrollbar-color: #bbb #f0f0f0;
+}
+
+.original-text::-webkit-scrollbar {
+  width: 10px;
+}
+
+.original-text::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.original-text::-webkit-scrollbar-thumb {
+  background: #bbb;
+  border-radius: 5px;
+  border: 2px solid #f0f0f0;
+}
+
+.original-text::-webkit-scrollbar-thumb:hover {
+  background: #999;
 }
 
 .char {
@@ -845,9 +857,20 @@ export default {
   text-align: center;
 }
 
-.wubi-hint-section {
-  margin-top: 16px;
-  animation: fadeIn 0.3s ease-in;
+.wubi-hint-bar {
+  margin-bottom: 8px;
+  animation: fadeIn 0.2s ease-in;
+}
+
+.wubi-hint-bar .ant-alert {
+  margin-bottom: 0;
+  padding: 4px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.wubi-hint-bar .ant-alert-message {
+  white-space: nowrap;
 }
 
 @keyframes fadeIn {
@@ -863,16 +886,4 @@ export default {
   margin-bottom: 16px;
 }
 
-.wubi-graph {
-  width: 100%;
-  height: 400px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-@media (max-width: 768px) {
-  .wubi-practice-container {
-    grid-template-columns: 1fr;
-  }
-}
 </style>
