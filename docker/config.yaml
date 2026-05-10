@@ -1,0 +1,25 @@
+# Docker environment configuration
+server:
+  host: "0.0.0.0"
+  port: 3000
+  log_level: "info"
+
+database:
+  # PostgreSQL as primary database
+  type: "postgres"
+
+  postgres:
+    host: "postgres"
+    port: 5432
+    username: "wubi"
+    password: "wubi123"
+    database: "wubi"
+    max_connections: 10
+
+  redis:
+    url: "redis://redis:6379"
+    max_connections: 10
+
+auth:
+  jwt_secret: "your-secret-key-change-in-production"
+  token_expiration_hours: 24

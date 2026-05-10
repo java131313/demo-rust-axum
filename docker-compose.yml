@@ -1,63 +1,68 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  # MongoDB数据库服务
-  mongo:
-    image: mongo:7
-    container_name: wubi-mongo
-    restart: unless-stopped
+  postgres:
+    image: postgres:16-alpine
+    container_name: wubi-pg
     environment:
-      MONGO_INITDB_DATABASE: wubi
-    ports:
-      - "27017:27017"
+      POSTGRES_USER: wubi
+      POSTGRES_PASSWORD: wubi123
+      POSTGRES_DB: wubi
     volumes:
-      - mongo_data:/data/db
+      - pg_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      timeout: 5s
-      retries: 10
+      test: ["CMD-SHELL", "pg_isready -U wubi -d wubi"]
       interval: 5s
-    networks:
-      - wubi-network
+      timeout: 5s
+      retries: 5
 
-  # Rust Axum应用服务
-  wubi-app:
-    build: .
-    container_name: wubi-app
-    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    container_name: wubi-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: wubi-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - RUST_LOG=info
+    volumes:
+      - uploads:/app/uploads
     ports:
       - "3000:3000"
-    environment:
-      DATABASE_URL: mongodb://mongo:27017/wubi
-      RUST_LOG: info
-      JWT_SECRET: your-secret-key-change-in-production
-    depends_on:
-      mongo:
-        condition: service_healthy
-    networks:
-      - wubi-network
+    restart: unless-stopped
 
-  # 前端Vue应用服务（可选）
   frontend:
-    image: node:20-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
     container_name: wubi-frontend
-    working_dir: /app
-    volumes:
-      - ./frontend:/app
-    ports:
-      - "5173:5173"
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-    environment:
-      - VITE_API_URL=http://localhost:3000
     depends_on:
-      - wubi-app
-    networks:
-      - wubi-network
+      - backend
+    ports:
+      - "80:80"
+    restart: unless-stopped
 
 volumes:
-  mongo_data:
-    driver: local
-
-networks:
-  wubi-network:
-    driver: bridge
+  pg_data:
+  redis_data:
+  uploads:

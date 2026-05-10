@@ -31,3 +31,11 @@ docs/
 # 测试
 tests/
 examples/
+
+# 其他项目
+go-axum/
+java-spring-axum/
+todo/
+docker/mongo-export/
+logs/
+CLAUDE.md
