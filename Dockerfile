@@ -47,14 +47,16 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # AI 编程助手 CLI 工具：multica（AI agent 管理）与 pi（编程助手）
+# 默认使用国内镜像源（npmmirror / jsdelivr），可用 --build-arg 覆盖
 ARG NODE_VERSION=22.23.1
-ARG NODE_DIST_URL=https://nodejs.org/dist
-ARG NPM_REGISTRY=https://registry.npmjs.org
+ARG NODE_DIST_URL=https://registry.npmmirror.com/-/binary/node
+ARG NPM_REGISTRY=https://registry.npmmirror.com
 ARG PI_VERSION=0.80.2
+ARG MULTICA_INSTALL_URL=https://cdn.jsdelivr.net/gh/multica-ai/multica@main/scripts/install.sh
 
-RUN curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.sh | bash
+RUN curl -fsSL "${MULTICA_INSTALL_URL}" | bash
 
-# Node.js（pi运行依赖>=22.19），从官方dist安装指定版本
+# Node.js（pi运行依赖>=22.19），从国内镜像安装指定版本
 RUN set -eux; \
     FILE="node-v${NODE_VERSION}-linux-x64.tar.xz"; \
     curl -fsSL "${NODE_DIST_URL}/v${NODE_VERSION}/${FILE}" -o /tmp/node.tar.xz; \
