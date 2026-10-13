@@ -1,26 +1,9 @@
 version: '3.8'
 
-services:
-  # MongoDB数据库服务
-  mongo:
-    image: mongo:7
-    container_name: wubi-mongo
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_DATABASE: wubi
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      timeout: 5s
-      retries: 10
-      interval: 5s
-    networks:
-      - wubi-network
+# 一体化部署：单个容器包含 Rust API + 嵌入式前端 + SQLite
+# Redis缓存使用云端托管实例（可用REDIS_URL环境变量覆盖，连接失败自动降级为纯SQLite）
 
-  # Rust Axum应用服务
+services:
   wubi-app:
     build: .
     container_name: wubi-app
@@ -28,36 +11,24 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: mongodb://mongo:27017/wubi
       RUST_LOG: info
+      # SQLite数据库文件路径（容器内）
+      SQLITE_PATH: /app/data/app.db
+      # Redis读缓存：从同目录 .env 文件读取（.env 不进git仓库），
+      # 未设置时自动降级为纯SQLite。参考 .env.example
+      REDIS_URL: "${REDIS_URL:-}"
+      # 生产环境务必修改
       JWT_SECRET: your-secret-key-change-in-production
-    depends_on:
-      mongo:
-        condition: service_healthy
-    networks:
-      - wubi-network
-
-  # 前端Vue应用服务（可选）
-  frontend:
-    image: node:20-alpine
-    container_name: wubi-frontend
-    working_dir: /app
     volumes:
-      - ./frontend:/app
-    ports:
-      - "5173:5173"
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-    environment:
-      - VITE_API_URL=http://localhost:3000
-    depends_on:
-      - wubi-app
-    networks:
-      - wubi-network
+      # 持久化SQLite数据文件
+      - wubi_data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
 
 volumes:
-  mongo_data:
+  wubi_data:
     driver: local
-
-networks:
-  wubi-network:
-    driver: bridge

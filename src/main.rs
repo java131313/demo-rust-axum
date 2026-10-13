@@ -2,27 +2,15 @@
 //!
 //! <https://github.com/joelparkerhenderson/demo-rust-axum>
 //!
-//! This demo shows how to:
-//!
-//! * Create a project using Rust and the axum web framework.
-//!
-//! * Create axum router routes and their handler functions.
-//!
-//! * Create responses with HTTP status code OK and HTML text.
-//!
-//! * Create a binary image and respond with a custom header.
-//!
-//! * Create functionality for HTTP GET, PUT, PATCH, POST, DELETE.
-//!
-//! * Use axum extractors for query parameters and path parameters.
-//!
-//! * Create a data store and access it using RESTful routes.
-//!
-//! For more see the file `README.md` in the project root.
+//! 架构：SQLite主数据库 + Redis读缓存 + 嵌入式前端静态资源。
+//! 前端构建产物（frontend/dist）通过rust-embed编译进二进制，
+//! 单个可执行文件同时提供API（/api/*）和Web界面（/）。
 
 pub mod app;
+pub mod cache;
 pub mod config;
 pub mod db;
+pub mod static_files;
 pub mod wubi;
 pub mod wubi_dict;
 
@@ -73,6 +61,28 @@ async fn main() {
             db.init_db().await.expect("failed to initialize database");
             Arc::new(db)
         }
+        "sqlite" => {
+            let database_url = config.get_sqlite_url();
+            println!("SQLite URL: {}", database_url);
+
+            use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
+            use std::str::FromStr;
+            let options = SqliteConnectOptions::from_str(&database_url)
+                .expect("invalid SQLite connection string")
+                .create_if_missing(true)
+                .journal_mode(SqliteJournalMode::Wal)
+                .busy_timeout(std::time::Duration::from_secs(5));
+
+            let pool = SqlitePoolOptions::new()
+                .max_connections(config.database.sqlite.max_connections)
+                .connect_with(options)
+                .await
+                .expect("failed to connect to SQLite database");
+
+            let db = crate::db::SqliteDatabase::new(pool);
+            db.init_db().await.expect("failed to initialize database");
+            Arc::new(db)
+        }
         "redis" => {
             let redis_url = config.database.redis.url.clone();
             let db =
@@ -89,6 +99,30 @@ async fn main() {
             Arc::new(db)
         }
         _ => panic!("Unsupported database type: {}", config.get_db_type()),
+    };
+
+    // 连接Redis缓存（可用REDIS_URL环境变量覆盖config.yaml中的配置）
+    let redis_url =
+        std::env::var("REDIS_URL").unwrap_or_else(|_| config.database.redis.url.clone());
+
+    let db: Arc<dyn Database> = match redis::Client::open(redis_url.as_str()) {
+        Ok(redis_client) => match redis::aio::ConnectionManager::new(redis_client).await {
+            Ok(conn_manager) => {
+                println!("Redis cache connected: {}", sanitize_url(&redis_url));
+                Arc::new(crate::cache::CachedDatabase::new(db, conn_manager))
+            }
+            Err(e) => {
+                eprintln!(
+                    "WARNING: Redis connection failed ({}), running WITHOUT cache",
+                    e
+                );
+                db
+            }
+        },
+        Err(e) => {
+            eprintln!("WARNING: invalid Redis URL ({}), running WITHOUT cache", e);
+            db
+        }
     };
 
     let state = crate::wubi::AppState { db };
@@ -110,6 +144,17 @@ async fn main() {
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap();
+}
+
+/// 隐藏Redis URL中的密码，用于日志输出
+fn sanitize_url(url: &str) -> String {
+    match url.split_once('@') {
+        Some((head, tail)) => match head.split_once("://") {
+            Some((scheme, _)) => format!("{}://***@{}", scheme, tail),
+            None => "***".to_string(),
+        },
+        None => url.to_string(),
+    }
 }
 
 /// Shutdown signal to run axum with graceful shutdown when

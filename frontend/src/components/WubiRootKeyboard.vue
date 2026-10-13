@@ -120,7 +120,8 @@
 </template>
 
 <script>
-const API_BASE = 'http://localhost:3000';
+// 使用相对路径，与页面同源（开发时由vite代理到后端）
+const API_BASE = '';
 
 export default {
   name: 'WubiRootKeyboard',

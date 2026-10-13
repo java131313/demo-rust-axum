@@ -155,9 +155,15 @@ pub struct NewWubiRoot {
     pub description: String,
 }
 
-/// A simple health check endpoint.
-pub async fn health() -> Json<serde_json::Value> {
-    Json(serde_json::json!({"status": "ok"}))
+/// 健康检查：检测数据库与Redis缓存状态
+pub async fn health(
+    State(state): State<AppState>,
+) -> Json<serde_json::Value> {
+    let db_ok = state.db.health_check().await.is_ok();
+    Json(serde_json::json!({
+        "status": if db_ok { "ok" } else { "degraded" },
+        "database": if db_ok { "up" } else { "down" },
+    }))
 }
 
 /// GET /api/lessons

@@ -15,10 +15,10 @@ use std::collections::HashMap;
 use serde_json::{json, Value};
 
 /// Create our application which is an axum router.
+/// 未匹配的路径（包括 / 和SPA前端路由）由static_files::serve提供嵌入式前端页面。
 pub fn app(state: AppState) -> axum::Router {
     axum::Router::new()
-        .fallback(fallback)
-        .route("/", get(hello))
+        .fallback(crate::static_files::serve)
         .route("/string.html", get(string_html))
         .route("/file.html", get(file_html))
         .route("/status", get(status))
@@ -83,18 +83,6 @@ pub fn app(state: AppState) -> axum::Router {
 // Each handler is an async function that returns something that
 // axum can convert into a response.
 ////
-
-/// axum handler for any request that fails to match the router routes.
-/// This implementation returns HTTP status code Not Found (404).
-pub async fn fallback(uri: axum::http::Uri) -> impl axum::response::IntoResponse {
-    (axum::http::StatusCode::NOT_FOUND, uri.to_string())
-}
-
-/// axum handler for "GET /" which returns a string and causes axum to
-/// immediately respond with status code `200 OK` and with the string.
-pub async fn hello() -> String {
-    "Hello, World!".to_string()
-}
 
 /// axum handler for "GET /string.html" which responds with a string.
 /// The `Html` type sets an HTTP header content-type of `text/html`.
@@ -476,9 +464,19 @@ mod tests {
     use super::*;
     use axum_test::TestServer;
 
+    /// 构建带内存SQLite测试数据库的应用
+    async fn test_app() -> axum::Router {
+        let pool = sqlx::SqlitePool::connect("sqlite::memory:")
+            .await
+            .expect("failed to connect to in-memory SQLite");
+        let db: std::sync::Arc<dyn crate::db::Database> =
+            std::sync::Arc::new(crate::db::SqliteDatabase::new(pool));
+        app(AppState { db })
+    }
+
     #[tokio::test]
     async fn uptime() {
-        let server = TestServer::new(app()).unwrap();
+        let server = TestServer::new(test_app().await).unwrap();
         let response_text_0 = server.get("/uptime").await.text();
         std::thread::sleep(std::time::Duration::from_secs(1));
         let response_text_1 = server.get("/uptime").await.text();
@@ -487,7 +485,7 @@ mod tests {
 
     #[tokio::test]
     async fn count() {
-        let server = TestServer::new(app()).unwrap();
+        let server = TestServer::new(test_app().await).unwrap();
             let response_text_0 = server.get("/count").await.text();
         let response_text_1 = server.get("/count").await.text();
         assert!(response_text_0 < response_text_1, "{} < {}", response_text_0, response_text_1);
@@ -495,7 +493,7 @@ mod tests {
 
     #[tokio::test]
     async fn epoch() {
-        let server = TestServer::new(app()).unwrap();
+        let server = TestServer::new(test_app().await).unwrap();
         let response_text_0 = server.get("/epoch").await.text();
         std::thread::sleep(std::time::Duration::from_secs(1));
         let response_text_1 = server.get("/epoch").await.text();

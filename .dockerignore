@@ -1,8 +1,10 @@
+target/
+tmp/
+*.tmp
 # Rust构建产物
 /target
 **/*.rs.bk
 *.pdb
-Cargo.lock
 
 # IDE和编辑器
 .vscode
@@ -14,20 +16,47 @@ Cargo.lock
 
 # 日志文件
 *.log
+logs/
 
-# 前端相关
+# 环境变量文件（防止密钥泄露到镜像）
+.env
+.env.*
+
+# 前端相关（node_modules和dist在Docker内部构建）
 frontend/node_modules
 frontend/dist
 frontend/.vite
+
+# 其他语言实现的参考代码
+python-axum/
+go-axum/
+java-spring-axum/
+java-swing/
+
+# 一次性脚本和数据处理产物（非运行时所需）
+*.py
+*.jar
+*.pdf
+*.epub
+*.plist
+*.sql
+*.csv
+*.cff
+wubi-swing-client.jar
+scripts/
+todo/
+doc/
+.github/
 
 # Git
 .git
 .gitignore
 
-# 文档
-*.md
-docs/
-
-# 测试
+# 测试与示例
 tests/
 examples/
+
+# 部署文件本身不需要进入镜像
+deploy/
+docker-compose.yml
+Makefile

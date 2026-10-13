@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wubi-typing
+  labels:
+    app: wubi-typing
+spec:
+  # SQLite为单文件数据库，副本数必须为1；如需多副本请改用外部数据库
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wubi-typing
+  template:
+    metadata:
+      labels:
+        app: wubi-typing
+    spec:
+      containers:
+        - name: app
+          # 推送GHCR后换成你的镜像地址
+          image: ghcr.io/YOUR_GITHUB_USERNAME/demo-rust-axum:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            # Redis缓存（读缓存，可选；连接失败自动降级为纯SQLite）。
+            # 敏感连接串建议不要写在这里，部署时在Sealos应用管理界面添加同名环境变量。
+            - name: REDIS_URL
+              value: "redis://127.0.0.1:6379"
+            # 生产环境务必改成随机长字符串
+            - name: JWT_SECRET
+              value: "please-change-me-to-a-long-random-string"
+            - name: SQLITE_PATH
+              value: "/app/data/app.db"
+            - name: RUST_LOG
+              value: "info"
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: wubi-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wubi-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wubi-typing
+spec:
+  selector:
+    app: wubi-typing
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000

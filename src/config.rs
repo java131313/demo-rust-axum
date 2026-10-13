@@ -24,17 +24,27 @@ fn default_log_level() -> String {
 /// 数据库配置
 #[derive(Debug, Deserialize, Clone)]
 pub struct DatabaseConfig {
-    /// 数据库类型: "mysql" 或 "postgres" 或 "redis" 或 "mongo"
+    /// 数据库类型: "mysql" 或 "postgres" 或 "sqlite" 或 "redis" 或 "mongo"
     #[serde(rename = "type", default = "default_db_type")]
     pub db_type: String,
     pub mysql: DbConnectionConfig,
     pub postgres: DbConnectionConfig,
+    pub sqlite: SqliteConfig,
     pub redis: RedisConfig,
     pub mongo: MongoConfig,
 }
 
 fn default_db_type() -> String {
-    "mongo".to_string()
+    "sqlite".to_string()
+}
+
+/// SQLite配置
+#[derive(Debug, Deserialize, Clone)]
+pub struct SqliteConfig {
+    /// 数据库文件路径，例如 "data/app.db" 或 ":memory:"
+    pub path: String,
+    #[serde(default = "default_max_connections")]
+    pub max_connections: u32,
 }
 
 /// Redis配置
@@ -106,6 +116,7 @@ impl AppConfig {
                     db.username, db.password, db.host, db.port, db.database
                 )
             }
+            "sqlite" => self.get_sqlite_url(),
             "redis" => {
                 self.database.redis.url.clone()
             }
@@ -113,6 +124,16 @@ impl AppConfig {
                 self.database.mongo.uri.clone()
             }
             _ => panic!("不支持的数据库类型: {}", self.database.db_type),
+        }
+    }
+
+    /// 获取SQLite连接URL（可用SQLITE_PATH环境变量覆盖）
+    pub fn get_sqlite_url(&self) -> String {
+        let path = std::env::var("SQLITE_PATH").unwrap_or_else(|_| self.database.sqlite.path.clone());
+        if path == ":memory:" {
+            "sqlite::memory:".to_string()
+        } else {
+            format!("sqlite://{}", path)
         }
     }
 

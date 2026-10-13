@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  // 使用相对路径：开发时由vite代理到后端，生产时由同一Rust服务提供
+  baseURL: '/api',
   timeout: 10000,
 });
 
