@@ -48,7 +48,18 @@ RUN apt-get update && \
 
 # AI 编程助手 CLI 工具：multica（AI agent 管理）与 pi（编程助手）
 RUN curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.sh | bash
-RUN curl -fsSL https://pi.dev/install.sh | sh
+
+# Node.js 24（pi运行依赖>=22.19），从官方dist安装
+RUN set -eux; \
+    BASE="https://nodejs.org/dist/latest-v24.x"; \
+    FILE=$(curl -fsSL "$BASE/SHASUMS256.txt" | grep -o 'node-v24[^ ]*linux-x64\.tar\.xz' | head -1); \
+    curl -fsSL "$BASE/$FILE" -o /tmp/node.tar.xz; \
+    tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1; \
+    rm /tmp/node.tar.xz; \
+    node --version
+
+# pi 编程助手（官方npm包）
+RUN npm install -g --ignore-scripts @earendil-works/pi-coding-agent && pi --version
 
 # 从builder阶段复制编译好的二进制文件
 COPY --from=builder /usr/src/demo-rust-axum/target/release/demo-rust-axum ./
