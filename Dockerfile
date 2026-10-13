@@ -31,6 +31,7 @@ COPY src ./src
 COPY config.yaml ./
 COPY data ./data
 COPY liaozhai_articles.json ./
+COPY swagger-ui-dist ./swagger-ui-dist
 COPY --from=frontend /fe/dist ./frontend/dist
 RUN touch src/main.rs && cargo build --release
 
