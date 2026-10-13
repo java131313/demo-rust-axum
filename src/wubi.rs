@@ -59,14 +59,14 @@ fn load_wubi_dict() -> Vec<WubiDictEntry> {
 }
 
 /// Input payload for user login.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct LoginRequest {
     pub username: String,
     pub password: String,
 }
 
 /// Input payload for user registration.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct RegisterRequest {
     pub username: String,
     pub email: String,
@@ -74,7 +74,7 @@ pub struct RegisterRequest {
 }
 
 /// Output payload for user login.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct LoginResponse {
     pub access_token: String,
     pub user: crate::config::User,
@@ -97,7 +97,7 @@ pub struct Lesson {
 }
 
 /// Input payload for creating a new lesson.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct NewLesson {
     pub character: String,
     pub code: String,
@@ -105,7 +105,7 @@ pub struct NewLesson {
 }
 
 /// Input payload for recording progress.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct ProgressUpdate {
     pub user_name: String,
     pub lesson_id: i32,
@@ -129,7 +129,7 @@ pub struct Article {
 }
 
 /// Input payload for creating a new article.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct NewArticle {
     pub title: String,
     pub content: String,
@@ -150,7 +150,7 @@ pub struct WubiRoot {
 }
 
 /// Input payload for creating a new wubi root.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct NewWubiRoot {
     pub character: String,
     pub code: String,
@@ -159,6 +159,7 @@ pub struct NewWubiRoot {
 }
 
 /// 健康检查：检测数据库与Redis缓存状态
+#[utoipa::path(get, path = "/api/health", tag = "system", responses((status = 200, description = "服务健康状态")))]
 pub async fn health(
     State(state): State<AppState>,
 ) -> Json<serde_json::Value> {
@@ -170,6 +171,7 @@ pub async fn health(
 }
 
 /// GET /api/lessons
+#[utoipa::path(get, path = "/api/lessons", tag = "lessons", responses((status = 200, description = "课程列表", body = [crate::config::Lesson])))]
 pub async fn get_lessons(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<crate::config::Lesson>>, StatusCode> {
@@ -181,6 +183,7 @@ pub async fn get_lessons(
     Ok(Json(lessons))
 }
 
+#[utoipa::path(get, path = "/api/lessons/{id}", tag = "lessons", params(("id" = i32, Path, description = "课程ID")), responses((status = 200, description = "课程详情", body = crate::config::Lesson), (status = 404, description = "不存在")))]
 pub async fn get_lesson(
     Path(id): Path<i32>,
     State(state): State<AppState>,
@@ -196,6 +199,7 @@ pub async fn get_lesson(
     Ok(Json(lesson))
 }
 
+#[utoipa::path(post, path = "/api/lessons", tag = "lessons", request_body = NewLesson, responses((status = 201, description = "创建成功", body = crate::config::Lesson)))]
 pub async fn create_lesson(
     State(state): State<AppState>,
     Json(payload): Json<NewLesson>,
@@ -208,6 +212,7 @@ pub async fn create_lesson(
     Ok((StatusCode::CREATED, Json(lesson)))
 }
 
+#[utoipa::path(post, path = "/api/progress", tag = "progress", request_body = ProgressUpdate, responses((status = 201, description = "进度已保存")))]
 pub async fn post_progress(
     State(state): State<AppState>,
     Json(payload): Json<ProgressUpdate>,
@@ -225,6 +230,7 @@ pub async fn post_progress(
     Ok(StatusCode::CREATED)
 }
 
+#[utoipa::path(get, path = "/api/articles", tag = "articles", responses((status = 200, description = "系统文章列表", body = [crate::config::Article])))]
 pub async fn get_articles(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<crate::config::Article>>, StatusCode> {
@@ -236,6 +242,7 @@ pub async fn get_articles(
     Ok(Json(articles))
 }
 
+#[utoipa::path(get, path = "/api/articles/{id}", tag = "articles", params(("id" = i32, Path, description = "文章ID")), responses((status = 200, description = "文章详情", body = crate::config::Article), (status = 404, description = "不存在")))]
 pub async fn get_article(
     Path(id): Path<i32>,
     State(state): State<AppState>,
@@ -251,6 +258,7 @@ pub async fn get_article(
     Ok(Json(article))
 }
 
+#[utoipa::path(post, path = "/api/articles", tag = "articles", request_body = NewArticle, responses((status = 201, description = "创建成功", body = crate::config::Article)))]
 pub async fn create_article(
     State(state): State<AppState>,
     Json(payload): Json<NewArticle>,
@@ -263,6 +271,7 @@ pub async fn create_article(
     Ok((StatusCode::CREATED, Json(article)))
 }
 
+#[utoipa::path(put, path = "/api/articles/{id}", tag = "articles", params(("id" = i32, Path, description = "文章ID")), request_body = NewArticle, responses((status = 200, description = "更新成功", body = crate::config::Article), (status = 404, description = "不存在")))]
 pub async fn update_article(
     Path(id): Path<i32>,
     State(state): State<AppState>,
@@ -279,6 +288,7 @@ pub async fn update_article(
     Ok(Json(article))
 }
 
+#[utoipa::path(delete, path = "/api/articles/{id}", tag = "articles", params(("id" = i32, Path, description = "文章ID")), responses((status = 204, description = "已删除"), (status = 404, description = "不存在")))]
 pub async fn delete_article(
     Path(id): Path<i32>,
     State(state): State<AppState>,
@@ -294,6 +304,7 @@ pub async fn delete_article(
     Ok(StatusCode::NO_CONTENT)
 }
 
+#[utoipa::path(get, path = "/api/custom-articles", tag = "articles", params(("lang" = Option<String>, Query, description = "语言: zh(默认)/ja/tw/en")), responses((status = 200, description = "自定义文章列表", body = [crate::config::Article])))]
 pub async fn get_custom_articles(
     State(state): State<AppState>,
     axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
@@ -307,6 +318,7 @@ pub async fn get_custom_articles(
     Ok(Json(articles))
 }
 
+#[utoipa::path(post, path = "/api/custom-articles", tag = "articles", request_body = NewArticle, responses((status = 201, description = "创建成功", body = crate::config::Article)))]
 pub async fn create_custom_article(
     State(state): State<AppState>,
     Json(payload): Json<NewArticle>,
@@ -320,6 +332,7 @@ pub async fn create_custom_article(
     Ok((StatusCode::CREATED, Json(article)))
 }
 
+#[utoipa::path(delete, path = "/api/custom-articles/{id}", tag = "articles", params(("id" = i32, Path, description = "文章ID")), responses((status = 204, description = "已删除"), (status = 404, description = "不存在")))]
 pub async fn delete_custom_article(
     Path(id): Path<i32>,
     State(state): State<AppState>,
@@ -335,6 +348,7 @@ pub async fn delete_custom_article(
     Ok(StatusCode::NO_CONTENT)
 }
 
+#[utoipa::path(put, path = "/api/custom-articles/{id}", tag = "articles", params(("id" = i32, Path, description = "文章ID")), request_body = NewArticle, responses((status = 200, description = "更新成功", body = crate::config::Article), (status = 404, description = "不存在")))]
 pub async fn update_custom_article(
     Path(id): Path<i32>,
     State(state): State<AppState>,
@@ -351,12 +365,13 @@ pub async fn update_custom_article(
     Ok(Json(article))
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateWubiCode {
     pub character: String,
     pub code: String,
 }
 
+#[utoipa::path(put, path = "/api/wubi-code", tag = "wubi", request_body = UpdateWubiCode, responses((status = 200, description = "更新成功", body = crate::config::WubiCharacter)))]
 pub async fn update_wubi_code_handler(
     State(state): State<AppState>,
     Json(payload): Json<UpdateWubiCode>,
@@ -369,6 +384,7 @@ pub async fn update_wubi_code_handler(
     Ok(Json(result))
 }
 
+#[utoipa::path(get, path = "/api/wubi-roots", tag = "wubi", responses((status = 200, description = "字根列表", body = [crate::config::WubiRoot])))]
 pub async fn get_wubi_roots(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<crate::config::WubiRoot>>, StatusCode> {
@@ -379,6 +395,7 @@ pub async fn get_wubi_roots(
     Ok(Json(roots))
 }
 
+#[utoipa::path(get, path = "/api/wubi-roots/{id}", tag = "wubi", params(("id" = i32, Path, description = "字根ID")), responses((status = 200, description = "字根详情", body = crate::config::WubiRoot), (status = 404, description = "不存在")))]
 pub async fn get_wubi_root(
     Path(id): Path<i32>,
     State(state): State<AppState>,
@@ -394,6 +411,7 @@ pub async fn get_wubi_root(
     Ok(Json(root))
 }
 
+#[utoipa::path(post, path = "/api/wubi-roots", tag = "wubi", request_body = NewWubiRoot, responses((status = 201, description = "创建成功", body = crate::config::WubiRoot)))]
 pub async fn create_wubi_root(
     State(state): State<AppState>,
     Json(payload): Json<NewWubiRoot>,
@@ -411,6 +429,7 @@ pub async fn create_wubi_root(
     Ok((StatusCode::CREATED, Json(root)))
 }
 
+#[utoipa::path(get, path = "/api/search-wubi-root/{character}", tag = "wubi", params(("character" = String, Path, description = "汉字")), responses((status = 200, description = "查询结果", body = Option<crate::config::WubiRoot>)))]
 pub async fn search_wubi_root(
     Path(character): Path<String>,
     State(state): State<AppState>,
@@ -423,6 +442,7 @@ pub async fn search_wubi_root(
     Ok(Json(root))
 }
 
+#[utoipa::path(get, path = "/api/wubi/{character}", tag = "wubi", params(("character" = String, Path, description = "单个汉字")), responses((status = 200, description = "五笔编码", body = crate::config::WubiCharacter), (status = 400, description = "参数错误"), (status = 404, description = "未找到")))]
 pub async fn get_wubi_code(
     Path(character): Path<String>,
     State(state): State<AppState>,
@@ -463,6 +483,7 @@ pub async fn get_wubi_code(
     }
 }
 
+#[utoipa::path(get, path = "/api/key-radicals", tag = "wubi", responses((status = 200, description = "键位字根列表", body = [crate::config::KeyRadical])))]
 pub async fn get_key_radicals(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<crate::config::KeyRadical>>, StatusCode> {
@@ -475,6 +496,7 @@ pub async fn get_key_radicals(
     Ok(Json(radicals))
 }
 
+#[utoipa::path(get, path = "/api/key-radicals/{key}", tag = "wubi", params(("key" = String, Path, description = "键位字符")), responses((status = 200, description = "键位字根", body = crate::config::KeyRadical), (status = 404, description = "不存在")))]
 pub async fn get_key_radical_by_key(
     Path(key_char): Path<String>,
     State(state): State<AppState>,
@@ -491,6 +513,7 @@ pub async fn get_key_radical_by_key(
     }
 }
 
+#[utoipa::path(get, path = "/api/english-texts", tag = "texts", responses((status = 200, description = "英语练习文本", body = [crate::config::EnglishText])))]
 pub async fn get_english_texts(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<crate::config::EnglishText>>, StatusCode> {
@@ -504,6 +527,7 @@ pub async fn get_english_texts(
 }
 
 /// GET /api/japanese-texts
+#[utoipa::path(get, path = "/api/japanese-texts", tag = "texts", responses((status = 200, description = "日语练习文本", body = [crate::config::JapaneseText])))]
 pub async fn get_japanese_texts(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<crate::config::JapaneseText>>, StatusCode> {
@@ -517,6 +541,7 @@ pub async fn get_japanese_texts(
 }
 
 /// GET /api/japanese-keyboards
+#[utoipa::path(get, path = "/api/japanese-keyboards", tag = "texts", responses((status = 200, description = "日语键盘布局", body = [crate::config::JapaneseKeyboard])))]
 pub async fn get_japanese_keyboards(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<crate::config::JapaneseKeyboard>>, StatusCode> {
@@ -530,6 +555,7 @@ pub async fn get_japanese_keyboards(
 }
 
 /// GET /api/japanese-characters
+#[utoipa::path(get, path = "/api/japanese-characters", tag = "texts", responses((status = 200, description = "日语字符", body = [crate::config::JapaneseCharacter])))]
 pub async fn get_japanese_characters(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<crate::config::JapaneseCharacter>>, StatusCode> {
@@ -543,6 +569,7 @@ pub async fn get_japanese_characters(
 }
 
 /// GET /api/traditional-chinese-texts
+#[utoipa::path(get, path = "/api/traditional-chinese-texts", tag = "texts", responses((status = 200, description = "繁体中文练习文本", body = [crate::config::TraditionalChineseText])))]
 pub async fn get_traditional_chinese_texts(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<crate::config::TraditionalChineseText>>, StatusCode> {
@@ -556,6 +583,7 @@ pub async fn get_traditional_chinese_texts(
 }
 
 /// GET /api/bopomofo-keyboards
+#[utoipa::path(get, path = "/api/bopomofo-keyboards", tag = "texts", responses((status = 200, description = "注音键盘布局", body = [crate::config::BopomofoKeyboard])))]
 pub async fn get_bopomofo_keyboards(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<crate::config::BopomofoKeyboard>>, StatusCode> {
@@ -569,6 +597,7 @@ pub async fn get_bopomofo_keyboards(
 }
 
 /// GET /api/bopomofo-characters
+#[utoipa::path(get, path = "/api/bopomofo-characters", tag = "texts", responses((status = 200, description = "注音字符", body = [crate::config::BopomofoCharacter])))]
 pub async fn get_bopomofo_characters(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<crate::config::BopomofoCharacter>>, StatusCode> {
@@ -582,6 +611,7 @@ pub async fn get_bopomofo_characters(
 }
 
 /// GET /api/japanese-gojuon
+#[utoipa::path(get, path = "/api/japanese-gojuon", tag = "texts", responses((status = 200, description = "五十音表", body = [crate::config::JapaneseGojuon])))]
 pub async fn get_japanese_gojuon(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<crate::config::JapaneseGojuon>>, StatusCode> {
@@ -595,6 +625,7 @@ pub async fn get_japanese_gojuon(
 }
 
 /// GET /api/japanese-kanji
+#[utoipa::path(get, path = "/api/japanese-kanji", tag = "texts", responses((status = 200, description = "日语汉字列表", body = [crate::config::JapaneseKanji])))]
 pub async fn get_japanese_kanji(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<crate::config::JapaneseKanji>>, StatusCode> {
@@ -608,6 +639,7 @@ pub async fn get_japanese_kanji(
 }
 
 /// GET /api/japanese-kanji/{kanji}
+#[utoipa::path(get, path = "/api/japanese-kanji/{kanji}", tag = "texts", params(("kanji" = String, Path, description = "汉字")), responses((status = 200, description = "查询结果", body = Option<crate::config::JapaneseKanji>)))]
 pub async fn get_japanese_kanji_by_char(
     Path(kanji): Path<String>,
     State(state): State<AppState>,
@@ -645,6 +677,7 @@ pub fn validate_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error
     Ok(decoded.claims)
 }
 
+#[utoipa::path(post, path = "/api/login", tag = "auth", request_body = LoginRequest, responses((status = 200, description = "登录成功", body = LoginResponse), (status = 401, description = "认证失败")))]
 pub async fn login(
     State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,
@@ -680,11 +713,13 @@ pub async fn login(
 }
 
 /// Logout user (client-side logout by removing token).
+#[utoipa::path(post, path = "/api/logout", tag = "auth", responses((status = 200, description = "已退出")))]
 pub async fn logout() -> StatusCode {
     // Logout is handled client-side by removing the token
     StatusCode::OK
 }
 
+#[utoipa::path(post, path = "/api/register", tag = "auth", request_body = RegisterRequest, responses((status = 200, description = "注册成功", body = LoginResponse), (status = 409, description = "用户已存在")))]
 pub async fn register(
     State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,

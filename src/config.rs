@@ -149,7 +149,7 @@ impl AppConfig {
 }
 
 /// 数据库模型 - 与数据库类型无关
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct User {
     pub id: i32,
     pub username: String,
@@ -158,7 +158,7 @@ pub struct User {
     pub created_at: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct Lesson {
     pub id: i32,
     pub character: String,
@@ -166,7 +166,7 @@ pub struct Lesson {
     pub description: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct Article {
     pub id: i32,
     pub title: String,
@@ -174,7 +174,7 @@ pub struct Article {
     pub difficulty: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct WubiRoot {
     pub id: i32,
     pub character: String,
@@ -183,7 +183,7 @@ pub struct WubiRoot {
     pub description: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct WubiCharacter {
     pub id: i32,
     pub character: String,
@@ -193,7 +193,7 @@ pub struct WubiCharacter {
     pub remark: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct EnglishText {
     pub id: i32,
     pub title: String,
@@ -201,7 +201,7 @@ pub struct EnglishText {
     pub difficulty: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct KeyRadical {
     pub id: i32,
     pub key_char: String,
@@ -211,7 +211,7 @@ pub struct KeyRadical {
 }
 
 /// 日语相关数据结构
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct JapaneseText {
     pub id: i32,
     pub title: String,
@@ -220,14 +220,14 @@ pub struct JapaneseText {
     pub r#type: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct JapaneseKeyboard {
     pub id: i32,
     pub layout_name: String,
     pub description: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct JapaneseCharacter {
     pub id: i32,
     pub character: String,
@@ -237,7 +237,7 @@ pub struct JapaneseCharacter {
 }
 
 /// 繁体中文注音相关数据结构
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct TraditionalChineseText {
     pub id: i32,
     pub title: String,
@@ -245,14 +245,14 @@ pub struct TraditionalChineseText {
     pub difficulty: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct BopomofoKeyboard {
     pub id: i32,
     pub layout_name: String,
     pub description: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct BopomofoCharacter {
     pub id: i32,
     pub character: String,
@@ -262,7 +262,7 @@ pub struct BopomofoCharacter {
 }
 
 /// 日语五十音相关数据结构
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct JapaneseGojuon {
     pub id: i32,
     pub character: String,
@@ -273,7 +273,7 @@ pub struct JapaneseGojuon {
 }
 
 /// 日语汉字相关数据结构
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct JapaneseKanji {
     pub id: i32,
     pub kanji: String,

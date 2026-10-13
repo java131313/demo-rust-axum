@@ -48,6 +48,7 @@ axum-extra = { version = "~0.10.3", features = ["typed-header"] } # 用于TypedH
 rand = "~0.8.5"           # 密码哈希盐生成
 rust-embed = { version = "~8.5.0" } # 前端静态资源嵌入二进制
 mime_guess = "~2.0" # 静态文件Content-Type推断
+utoipa = { version = "~6.0", features = ["axum_extras"] } # OpenAPI文档生成
 
 [dev-dependencies]
 axum-test = { version = "17.3.0" } # Library for writing tests for web servers written using Axum.

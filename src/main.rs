@@ -10,7 +10,9 @@ pub mod app;
 pub mod cache;
 pub mod config;
 pub mod db;
+pub mod openapi;
 pub mod static_files;
+pub mod swagger;
 pub mod wubi;
 pub mod wubi_dict;
 
@@ -23,6 +25,8 @@ mod data;
 use crate::db::Database;
 use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
+use utoipa::OpenApi;
+use axum::routing::get;
 /// Use tracing crates for application-level tracing output.
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -135,7 +139,13 @@ async fn main() {
 
     let state = crate::wubi::AppState { db };
 
-    let app = crate::app::app(state);
+    let app = crate::app::app(state)
+        // Swagger UI：API文档页面 /swagger-ui/，规范JSON /api-docs/openapi.json
+        .route("/api-docs/openapi.json", get(crate::swagger::openapi_json))
+        .route("/swagger-ui", get(crate::swagger::index))
+        .route("/swagger-ui/", get(crate::swagger::index))
+        .route("/swagger-ui/index.html", get(crate::swagger::index))
+        .route("/swagger-ui/{*file}", get(crate::swagger::assets));
 
     let cors = CorsLayer::new()
         .allow_origin(Any)
