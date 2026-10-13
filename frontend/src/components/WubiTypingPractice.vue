@@ -42,7 +42,7 @@
               {{ article.title }} ({{ article.difficulty }})
             </a-select-option>
           </a-select>
-          <a-button @click="openAddCustomArticleModal" type="dashed">
+          <a-button @click="startInlineAdd" type="dashed">
             添加自定义文章
           </a-button>
           <a-button v-if="currentArticle" @click="startInlineEdit" type="dashed">
@@ -54,7 +54,7 @@
         </a-space>
       </div>
 
-      <!-- 当前页面内联编辑：停止输入5秒后自动保存 -->
+      <!-- 当前页面内联添加/编辑：添加模式点「创建文章」入库；编辑模式停止输入5秒自动保存 -->
       <div v-if="inlineEditing" class="inline-edit-panel">
         <a-input
           v-model:value="editTitle"
@@ -64,7 +64,7 @@
         />
         <a-textarea
           v-model:value="editContent"
-          placeholder="编辑文章内容，停止输入5秒后自动保存"
+          :placeholder="inlineMode === 'add' ? '输入新文章内容，点击「创建文章」保存' : '编辑文章内容，停止输入5秒后自动保存'"
           :auto-size="{ minRows: 4, maxRows: 12 }"
           class="edit-content-input"
           @input="scheduleAutoSave"
@@ -72,10 +72,12 @@
         <div class="edit-actions">
           <span class="edit-hint">
             <span v-if="isAutoSaving">保存中...</span>
+            <span v-else-if="inlineMode === 'add'">填写完成后点击下方「创建文章」</span>
             <span v-else-if="lastSavedAt">已自动保存于 {{ lastSavedAt.toLocaleTimeString() }}</span>
             <span v-else>停止输入5秒后自动保存</span>
           </span>
-          <a-button size="small" type="primary" :loading="isAutoSaving" @click="saveInlineEdit">立即保存</a-button>
+          <a-button v-if="inlineMode === 'add'" size="small" type="primary" :loading="isAutoSaving" @click="createInlineArticle">创建文章</a-button>
+          <a-button v-else size="small" type="primary" :loading="isAutoSaving" @click="saveInlineEdit">立即保存</a-button>
           <a-button size="small" @click="cancelInlineEdit">取消</a-button>
         </div>
       </div>
@@ -188,33 +190,6 @@
     </a-card>
     
 
-    <!-- 添加/编辑自定义文章弹窗 -->
-    <a-modal
-      v-model:open="showCustomArticleModal"
-      :title="editingCustomArticleId === null ? '添加自定义简体中文文章' : '编辑自定义文章'"
-      @ok="handleSaveCustomArticle"
-      @cancel="closeCustomArticleModal"
-      :confirm-loading="isSavingCustomArticle"
-    >
-      <a-form layout="vertical">
-        <a-form-item label="文章标题" required>
-          <a-input
-            v-model:value="customArticleTitle"
-            placeholder="请输入文章标题"
-            maxlength="50"
-          />
-        </a-form-item>
-        <a-form-item label="文章内容" required>
-          <a-textarea
-            v-model:value="customArticleContent"
-            placeholder="请输入简体中文文章内容"
-            :auto-size="{ minRows: 4, maxRows: 8 }"
-            maxlength="2000"
-            show-count
-          />
-        </a-form-item>
-      </a-form>
-    </a-modal>
   </div>
 </template>
 
@@ -273,20 +248,15 @@ export default {
       isAutoTyping: false,
       isPaused: false,
       autoTimer: null,
-      // 自定义文章相关
-      showCustomArticleModal: false,
-      customArticleTitle: '',
-      customArticleContent: '',
-      // null表示新增模式，数字表示正在编辑的自定义文章ID
-      editingCustomArticleId: null,
-      // 当前页面内联编辑相关
+      // 当前页面内联添加/编辑相关
       inlineEditing: false,
+      // add=新增文章, edit=编辑当前文章
+      inlineMode: 'edit',
       editTitle: '',
       editContent: '',
       autoSaveTimer: null,
       isAutoSaving: false,
       lastSavedAt: null,
-      isSavingCustomArticle: false,
     };
   },
   computed: {
@@ -448,28 +418,17 @@ export default {
         console.error('加载数据失败:', error);
       }
     },
-    closeCustomArticleModal() {
-      this.showCustomArticleModal = false;
-      this.customArticleTitle = '';
-      this.customArticleContent = '';
-      this.editingCustomArticleId = null;
+    // ===== 当前页面内联添加/编辑 =====
+    startInlineAdd() {
+      this.inlineMode = 'add';
+      this.inlineEditing = true;
+      this.editTitle = '';
+      this.editContent = '';
+      this.lastSavedAt = null;
     },
-    openAddCustomArticleModal() {
-      this.editingCustomArticleId = null;
-      this.customArticleTitle = '';
-      this.customArticleContent = '';
-      this.showCustomArticleModal = true;
-    },
-    openEditCustomArticleModal() {
-      if (!this.currentArticle || !this.currentArticle.isCustom) return;
-      this.editingCustomArticleId = this.currentArticle.realId;
-      this.customArticleTitle = this.currentArticle.title;
-      this.customArticleContent = this.currentArticle.content;
-      this.showCustomArticleModal = true;
-    },
-    // ===== 当前页面内联编辑：5秒防抖自动保存 =====
     startInlineEdit() {
       if (!this.currentArticle) return;
+      this.inlineMode = 'edit';
       this.inlineEditing = true;
       this.editTitle = this.currentArticle.title;
       this.editContent = this.currentArticle.content;
@@ -486,12 +445,56 @@ export default {
       this.lastSavedAt = null;
     },
     scheduleAutoSave() {
+      // 仅编辑模式自动保存；添加模式需手动点「创建文章」，避免误建
+      if (this.inlineMode !== 'edit') return;
       this.lastSavedAt = null;
       if (this.autoSaveTimer) {
         clearTimeout(this.autoSaveTimer);
       }
       // 停止输入5秒后自动保存
       this.autoSaveTimer = setTimeout(() => this.saveInlineEdit(), 5000);
+    },
+    async createInlineArticle() {
+      const title = this.editTitle.trim();
+      const content = this.editContent.trim();
+      if (!title) {
+        this.$message?.warning('请输入文章标题');
+        return;
+      }
+      if (!content) {
+        this.$message?.warning('请输入文章内容');
+        return;
+      }
+      if (this.isAutoSaving) return;
+      if (this.autoSaveTimer) {
+        clearTimeout(this.autoSaveTimer);
+        this.autoSaveTimer = null;
+      }
+      this.isAutoSaving = true;
+      try {
+        const res = await axios.post('/api/custom-articles', {
+          title,
+          content,
+          difficulty: 'custom',
+          lang: 'zh',
+        });
+        this.$message?.success('自定义文章创建成功');
+        const newId = `custom-${res.data.id}`;
+        // 刷新列表并选中新文章，切换到编辑模式（此后自动保存）
+        await this.loadData();
+        const created = this.articles.find(a => a.id === newId);
+        if (created) {
+          this.selectedArticleId = newId;
+          this.handleArticleChange(newId);
+        }
+        this.inlineMode = 'edit';
+        this.lastSavedAt = new Date();
+      } catch (error) {
+        console.error('创建自定义文章失败:', error);
+        this.$message?.error('创建失败，请重试');
+      } finally {
+        this.isAutoSaving = false;
+      }
     },
     async saveInlineEdit() {
       if (!this.currentArticle || this.isAutoSaving) return;
@@ -562,53 +565,6 @@ export default {
           }
         },
       });
-    },
-    async handleSaveCustomArticle() {
-      const title = this.customArticleTitle.trim();
-      const content = this.customArticleContent.trim();
-      if (!title) {
-        this.$message?.warning('请输入文章标题');
-        return;
-      }
-      if (!content) {
-        this.$message?.warning('请输入文章内容');
-        return;
-      }
-      this.isSavingCustomArticle = true;
-      const isEditing = this.editingCustomArticleId !== null;
-      try {
-        const payload = {
-          title,
-          content,
-          difficulty: 'custom',
-        };
-        if (isEditing) {
-          await axios.put(`/api/custom-articles/${this.editingCustomArticleId}`, payload);
-          this.$message?.success('自定义文章更新成功');
-        } else {
-          await axios.post('/api/custom-articles', payload);
-          this.$message?.success('自定义文章添加成功');
-        }
-        const targetId = isEditing ? `custom-${this.editingCustomArticleId}` : null;
-        this.closeCustomArticleModal();
-        await this.loadData();
-        if (isEditing && targetId) {
-          // 编辑后重新选中该文章
-          const updated = this.articles.find(a => a.id === targetId);
-          if (updated) {
-            this.selectedArticleId = targetId;
-            this.handleArticleChange(targetId);
-          }
-        } else if (this.articles.length > 0) {
-          this.selectedArticleId = this.articles[this.articles.length - 1].id;
-          this.handleArticleChange(this.selectedArticleId);
-        }
-      } catch (error) {
-        console.error(isEditing ? '更新自定义文章失败:' : '保存自定义文章失败:', error);
-        this.$message?.error(isEditing ? '更新失败，请重试' : '保存失败，请重试');
-      } finally {
-        this.isSavingCustomArticle = false;
-      }
     },
     handleArticleChange(value) {
       this.selectedArticleId = value;
