@@ -56,12 +56,12 @@ ARG MULTICA_INSTALL_URL=https://cdn.jsdelivr.net/gh/multica-ai/multica@main/scri
 
 RUN curl -fsSL "${MULTICA_INSTALL_URL}" | bash
 
-# Node.js（pi运行依赖>=22.19），从国内镜像安装指定版本
+# Node.js（pi运行依赖>=22.19），从国内镜像安装指定版本（tar.gz：bookworm-slim无xz-utils）
 RUN set -eux; \
-    FILE="node-v${NODE_VERSION}-linux-x64.tar.xz"; \
-    curl -fsSL "${NODE_DIST_URL}/v${NODE_VERSION}/${FILE}" -o /tmp/node.tar.xz; \
-    tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1; \
-    rm /tmp/node.tar.xz; \
+    FILE="node-v${NODE_VERSION}-linux-x64.tar.gz"; \
+    curl -fsSL "${NODE_DIST_URL}/v${NODE_VERSION}/${FILE}" -o /tmp/node.tar.gz; \
+    tar -xzf /tmp/node.tar.gz -C /usr/local --strip-components=1; \
+    rm /tmp/node.tar.gz; \
     node --version
 
 # pi 编程助手（官方npm包，锁定版本与registry）
