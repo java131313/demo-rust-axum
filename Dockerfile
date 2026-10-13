@@ -47,19 +47,23 @@ RUN apt-get update && \
     && rm -rf /var/lib/apt/lists/*
 
 # AI 编程助手 CLI 工具：multica（AI agent 管理）与 pi（编程助手）
+ARG NODE_VERSION=22.23.1
+ARG NODE_DIST_URL=https://nodejs.org/dist
+ARG NPM_REGISTRY=https://registry.npmjs.org
+ARG PI_VERSION=0.80.2
+
 RUN curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.sh | bash
 
-# Node.js 24（pi运行依赖>=22.19），从官方dist安装
+# Node.js（pi运行依赖>=22.19），从官方dist安装指定版本
 RUN set -eux; \
-    BASE="https://nodejs.org/dist/latest-v24.x"; \
-    FILE=$(curl -fsSL "$BASE/SHASUMS256.txt" | grep -o 'node-v24[^ ]*linux-x64\.tar\.xz' | head -1); \
-    curl -fsSL "$BASE/$FILE" -o /tmp/node.tar.xz; \
+    FILE="node-v${NODE_VERSION}-linux-x64.tar.xz"; \
+    curl -fsSL "${NODE_DIST_URL}/v${NODE_VERSION}/${FILE}" -o /tmp/node.tar.xz; \
     tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1; \
     rm /tmp/node.tar.xz; \
     node --version
 
-# pi 编程助手（官方npm包）
-RUN npm install -g --ignore-scripts @earendil-works/pi-coding-agent && pi --version
+# pi 编程助手（官方npm包，锁定版本与registry）
+RUN npm install -g --ignore-scripts --registry="${NPM_REGISTRY}" "@earendil-works/pi-coding-agent@${PI_VERSION}" && pi --version
 
 # 从builder阶段复制编译好的二进制文件
 COPY --from=builder /usr/src/demo-rust-axum/target/release/demo-rust-axum ./
