@@ -46,6 +46,10 @@ RUN apt-get update && \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# AI 编程助手 CLI 工具：multica（AI agent 管理）与 pi（编程助手）
+RUN curl -fsSL https://raw.githubusercontent.com/multica-ai/multica/main/scripts/install.sh | bash
+RUN curl -fsSL https://pi.dev/install.sh | sh
+
 # 从builder阶段复制编译好的二进制文件
 COPY --from=builder /usr/src/demo-rust-axum/target/release/demo-rust-axum ./
 
