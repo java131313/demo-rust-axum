@@ -101,6 +101,17 @@ pub trait Database: Send + Sync {
     /// 删除自定义文章
     async fn delete_custom_article(&self, id: i32) -> Result<(), String>;
 
+    /// 更新自定义文章（默认不支持，由具体数据库实现）
+    async fn update_custom_article(
+        &self,
+        _id: i32,
+        _title: &str,
+        _content: &str,
+        _difficulty: &str,
+    ) -> Result<Article, String> {
+        Err("update_custom_article not supported for this database".to_string())
+    }
+
     /// 更新五笔编码
     async fn update_wubi_code(
         &self,
@@ -1321,6 +1332,35 @@ impl Database for MySqlDatabase {
         } else {
             Ok(())
         }
+    }
+
+    async fn update_custom_article(
+        &self,
+        id: i32,
+        title: &str,
+        content: &str,
+        difficulty: &str,
+    ) -> Result<Article, String> {
+        let result =
+            sqlx::query("UPDATE custom_articles SET title = ?, content = ?, difficulty = ? WHERE id = ?")
+                .bind(title)
+                .bind(content)
+                .bind(difficulty)
+                .bind(id)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+
+        if result.rows_affected() == 0 {
+            return Err("Custom article not found".to_string());
+        }
+
+        Ok(Article {
+            id,
+            title: title.to_string(),
+            content: content.to_string(),
+            difficulty: difficulty.to_string(),
+        })
     }
 
     async fn update_wubi_code(
@@ -5360,6 +5400,32 @@ impl Database for PostgresDatabase {
         }
     }
 
+    async fn update_custom_article(
+        &self,
+        id: i32,
+        title: &str,
+        content: &str,
+        difficulty: &str,
+    ) -> Result<Article, String> {
+        let article = sqlx::query_as::<_, (i32, String, String, String)>(
+            "UPDATE custom_articles SET title = $1, content = $2, difficulty = $3 WHERE id = $4 RETURNING id, title, content, difficulty"
+        )
+        .bind(title)
+        .bind(content)
+        .bind(difficulty)
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| match e {
+            sqlx::Error::RowNotFound => "Custom article not found".to_string(),
+            _ => e.to_string(),
+        })
+        .map(|(id, title, content, difficulty)| Article {
+            id, title, content, difficulty
+        });
+        article
+    }
+
     async fn update_wubi_code(
         &self,
         character: &str,
@@ -6937,6 +7003,32 @@ impl Database for SqliteDatabase {
         } else {
             Ok(())
         }
+    }
+
+    async fn update_custom_article(
+        &self,
+        id: i32,
+        title: &str,
+        content: &str,
+        difficulty: &str,
+    ) -> Result<Article, String> {
+        let article = sqlx::query_as::<_, (i32, String, String, String)>(
+            "UPDATE custom_articles SET title = ?1, content = ?2, difficulty = ?3 WHERE id = ?4 RETURNING id, title, content, difficulty"
+        )
+        .bind(title)
+        .bind(content)
+        .bind(difficulty)
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| match e {
+            sqlx::Error::RowNotFound => "Custom article not found".to_string(),
+            _ => e.to_string(),
+        })
+        .map(|(id, title, content, difficulty)| Article {
+            id, title, content, difficulty
+        });
+        article
     }
 
     async fn update_wubi_code(

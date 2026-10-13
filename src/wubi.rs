@@ -329,6 +329,22 @@ pub async fn delete_custom_article(
     Ok(StatusCode::NO_CONTENT)
 }
 
+pub async fn update_custom_article(
+    Path(id): Path<i32>,
+    State(state): State<AppState>,
+    Json(payload): Json<NewArticle>,
+) -> Result<Json<crate::config::Article>, (StatusCode, String)> {
+    let article = state
+        .db
+        .update_custom_article(id, &payload.title, &payload.content, &payload.difficulty)
+        .await
+        .map_err(|err| match err.as_str() {
+            "Custom article not found" => (StatusCode::NOT_FOUND, err),
+            _ => (StatusCode::INTERNAL_SERVER_ERROR, err),
+        })?;
+    Ok(Json(article))
+}
+
 #[derive(Debug, Deserialize)]
 pub struct UpdateWubiCode {
     pub character: String,

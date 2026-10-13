@@ -55,6 +55,11 @@ export const createCustomArticle = (data) => {
   return api.post('/custom-articles', data);
 };
 
+// 更新自定义文章
+export const updateCustomArticle = (id, data) => {
+  return api.put(`/custom-articles/${id}`, data);
+};
+
 // 删除自定义文章
 export const deleteCustomArticle = (id) => {
   return api.delete(`/custom-articles/${id}`);

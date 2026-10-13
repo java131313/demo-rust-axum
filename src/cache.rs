@@ -210,6 +210,21 @@ impl Database for CachedDatabase {
         Ok(())
     }
 
+    async fn update_custom_article(
+        &self,
+        id: i32,
+        title: &str,
+        content: &str,
+        difficulty: &str,
+    ) -> Result<Article, String> {
+        let article = self
+            .inner
+            .update_custom_article(id, title, content, difficulty)
+            .await?;
+        self.invalidate(&["custom-articles"]).await;
+        Ok(article)
+    }
+
     async fn update_wubi_code(
         &self,
         character: &str,
