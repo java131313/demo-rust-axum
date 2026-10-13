@@ -162,6 +162,10 @@ const loadCustomTexts = async () => {
 
 const currentText = computed(() => {
   if (japaneseTexts.value.length === 0) {
+    // 自定义tab为空时提示添加，而非"加载中"
+    if (selectedTab.value === 'custom') {
+      return { title: '暂无自定义文章，点击上方按钮添加', content: '' };
+    }
     return { title: '加载中...', content: '' };
   }
   return japaneseTexts.value[currentTextIndex.value] || japaneseTexts.value[0];
