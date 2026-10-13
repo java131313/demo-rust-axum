@@ -109,7 +109,15 @@ async fn main() {
         Ok(redis_client) => match redis::aio::ConnectionManager::new(redis_client).await {
             Ok(conn_manager) => {
                 println!("Redis cache connected: {}", sanitize_url(&redis_url));
-                Arc::new(crate::cache::CachedDatabase::new(db, conn_manager))
+                let cached = Arc::new(crate::cache::CachedDatabase::new(db, conn_manager));
+                // 后台预热文章类缓存，避免首个前端请求穿透到数据库
+                {
+                    let warmer = cached.clone();
+                    tokio::spawn(async move {
+                        warmer.warm_cache().await;
+                    });
+                }
+                cached
             }
             Err(e) => {
                 eprintln!(

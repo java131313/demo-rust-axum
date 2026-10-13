@@ -15,8 +15,12 @@ use std::sync::Arc;
 const KEY_PREFIX: &str = "wubi:cache";
 /// 列表类数据缓存时间（秒）
 const LIST_TTL: u64 = 300;
+/// 自定义文章列表缓存时间（秒）：内容大且变更少，单独设置更长TTL
+const CUSTOM_ARTICLES_TTL: u64 = 1800;
 /// 五笔编码查询缓存时间（秒）
 const WUBI_TTL: u64 = 600;
+/// Redis操作超时（秒）：跨境网络抖动时快速失败，降级为直读数据库
+const REDIS_OP_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(3);
 
 /// 带Redis缓存的数据库包装器
 pub struct CachedDatabase {
@@ -37,17 +41,25 @@ impl CachedDatabase {
         let full_key = format!("{}:{}", KEY_PREFIX, key);
         let mut conn = self.redis.clone();
 
-        // 先查缓存
-        match conn.get::<_, Option<String>>(&full_key).await {
-            Ok(Some(json)) => match serde_json::from_str::<T>(&json) {
+        // 先查缓存（带超时，网络抖动时快速降级）
+        let cached_value = tokio::time::timeout(
+            REDIS_OP_TIMEOUT,
+            conn.get::<_, Option<String>>(&full_key),
+        )
+        .await;
+        match cached_value {
+            Ok(Ok(Some(json))) => match serde_json::from_str::<T>(&json) {
                 Ok(value) => return Ok(value),
                 Err(e) => {
                     tracing::warn!("cache deserialize failed for {}: {}", full_key, e);
                 }
             },
-            Ok(None) => {}
-            Err(e) => {
+            Ok(Ok(None)) => {}
+            Ok(Err(e)) => {
                 tracing::warn!("redis GET {} failed: {}, fallback to db", full_key, e);
+            }
+            Err(_) => {
+                tracing::warn!("redis GET {} timeout, fallback to db", full_key);
             }
         }
 
@@ -56,8 +68,15 @@ impl CachedDatabase {
 
         // 写入缓存（失败仅告警，不影响响应）
         if let Ok(json) = serde_json::to_string(&value) {
-            if let Err(e) = conn.set_ex::<_, _, ()>(&full_key, json, ttl).await {
-                tracing::warn!("redis SET {} failed: {}", full_key, e);
+            let set_result = tokio::time::timeout(
+                REDIS_OP_TIMEOUT,
+                conn.set_ex::<_, _, ()>(&full_key, json, ttl),
+            )
+            .await;
+            match set_result {
+                Ok(Ok(())) => {}
+                Ok(Err(e)) => tracing::warn!("redis SET {} failed: {}", full_key, e),
+                Err(_) => tracing::warn!("redis SET {} timeout", full_key),
             }
         }
 
@@ -71,9 +90,23 @@ impl CachedDatabase {
             .map(|k| format!("{}:{}", KEY_PREFIX, k))
             .collect();
         let mut conn = self.redis.clone();
-        if let Err(e) = conn.del::<_, ()>(full_keys).await {
-            tracing::warn!("cache invalidate failed: {}", e);
+        let _ = tokio::time::timeout(REDIS_OP_TIMEOUT, conn.del::<_, ()>(full_keys)).await;
+    }
+
+    /// 预热缓存：把前端加载的文章类数据写入Redis，避免首个请求穿透到SQLite
+    pub async fn warm_cache(&self) {
+        tracing::info!("Warming Redis cache for article lists...");
+        let _ = self.get_articles().await;
+        for lang in ["zh", "ja", "tw", "en"] {
+            let _ = self.get_custom_articles(lang).await;
         }
+        let _ = self.get_english_texts().await;
+        let _ = self.get_japanese_texts().await;
+        let _ = self.get_traditional_chinese_texts().await;
+        let _ = self.get_lessons().await;
+        let _ = self.get_japanese_gojuon().await;
+        let _ = self.get_key_radicals().await;
+        tracing::info!("Redis cache warmed");
     }
 }
 
@@ -82,10 +115,13 @@ impl Database for CachedDatabase {
     async fn health_check(&self) -> Result<(), String> {
         self.inner.health_check().await?;
         let mut conn = self.redis.clone();
-        redis::cmd("PING")
-            .query_async::<_, ()>(&mut conn)
-            .await
-            .map_err(|e| e.to_string())
+        let ping = tokio::time::timeout(REDIS_OP_TIMEOUT, redis::cmd("PING").query_async::<_, ()>(&mut conn))
+            .await;
+        match ping {
+            Ok(Ok(())) => Ok(()),
+            Ok(Err(e)) => Err(e.to_string()),
+            Err(_) => Err("redis ping timeout".to_string()),
+        }
     }
 
     async fn init_db(&self) -> Result<(), String> {
@@ -188,7 +224,7 @@ impl Database for CachedDatabase {
     async fn get_custom_articles(&self, lang: &str) -> Result<Vec<Article>, String> {
         self.cached(
             &format!("custom-articles:{}", lang),
-            LIST_TTL,
+            CUSTOM_ARTICLES_TTL,
             self.inner.get_custom_articles(lang),
         )
         .await
