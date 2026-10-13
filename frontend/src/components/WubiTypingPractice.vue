@@ -45,17 +45,41 @@
           <a-button @click="openAddCustomArticleModal" type="dashed">
             添加自定义文章
           </a-button>
-          <template v-if="currentArticle && currentArticle.isCustom">
-            <a-button @click="openEditCustomArticleModal" type="dashed">
-              编辑
-            </a-button>
-            <a-button @click="handleDeleteCustomArticle" type="dashed" danger>
-              删除
-            </a-button>
-          </template>
+          <a-button v-if="currentArticle" @click="startInlineEdit" type="dashed">
+            编辑
+          </a-button>
+          <a-button v-if="currentArticle && currentArticle.isCustom" @click="handleDeleteCustomArticle" type="dashed" danger>
+            删除
+          </a-button>
         </a-space>
       </div>
-      
+
+      <!-- 当前页面内联编辑：停止输入5秒后自动保存 -->
+      <div v-if="inlineEditing" class="inline-edit-panel">
+        <a-input
+          v-model:value="editTitle"
+          placeholder="文章标题"
+          class="edit-title-input"
+          @input="scheduleAutoSave"
+        />
+        <a-textarea
+          v-model:value="editContent"
+          placeholder="编辑文章内容，停止输入5秒后自动保存"
+          :auto-size="{ minRows: 4, maxRows: 12 }"
+          class="edit-content-input"
+          @input="scheduleAutoSave"
+        />
+        <div class="edit-actions">
+          <span class="edit-hint">
+            <span v-if="isAutoSaving">保存中...</span>
+            <span v-else-if="lastSavedAt">已自动保存于 {{ lastSavedAt.toLocaleTimeString() }}</span>
+            <span v-else>停止输入5秒后自动保存</span>
+          </span>
+          <a-button size="small" type="primary" :loading="isAutoSaving" @click="saveInlineEdit">立即保存</a-button>
+          <a-button size="small" @click="cancelInlineEdit">取消</a-button>
+        </div>
+      </div>
+
       <!-- 原文显示 -->
       <div class="original-text" v-if="currentArticle">
         <div class="text-content">
@@ -255,6 +279,13 @@ export default {
       customArticleContent: '',
       // null表示新增模式，数字表示正在编辑的自定义文章ID
       editingCustomArticleId: null,
+      // 当前页面内联编辑相关
+      inlineEditing: false,
+      editTitle: '',
+      editContent: '',
+      autoSaveTimer: null,
+      isAutoSaving: false,
+      lastSavedAt: null,
       isSavingCustomArticle: false,
     };
   },
@@ -356,6 +387,9 @@ export default {
     if (this.autoTimer) {
       clearTimeout(this.autoTimer);
     }
+    if (this.autoSaveTimer) {
+      clearTimeout(this.autoSaveTimer);
+    }
   },
   methods: {
     activeHomeTabKey() {
@@ -432,6 +466,77 @@ export default {
       this.customArticleTitle = this.currentArticle.title;
       this.customArticleContent = this.currentArticle.content;
       this.showCustomArticleModal = true;
+    },
+    // ===== 当前页面内联编辑：5秒防抖自动保存 =====
+    startInlineEdit() {
+      if (!this.currentArticle) return;
+      this.inlineEditing = true;
+      this.editTitle = this.currentArticle.title;
+      this.editContent = this.currentArticle.content;
+      this.lastSavedAt = null;
+    },
+    cancelInlineEdit() {
+      if (this.autoSaveTimer) {
+        clearTimeout(this.autoSaveTimer);
+        this.autoSaveTimer = null;
+      }
+      this.inlineEditing = false;
+      this.editTitle = '';
+      this.editContent = '';
+      this.lastSavedAt = null;
+    },
+    scheduleAutoSave() {
+      this.lastSavedAt = null;
+      if (this.autoSaveTimer) {
+        clearTimeout(this.autoSaveTimer);
+      }
+      // 停止输入5秒后自动保存
+      this.autoSaveTimer = setTimeout(() => this.saveInlineEdit(), 5000);
+    },
+    async saveInlineEdit() {
+      if (!this.currentArticle || this.isAutoSaving) return;
+      if (this.autoSaveTimer) {
+        clearTimeout(this.autoSaveTimer);
+        this.autoSaveTimer = null;
+      }
+      const title = this.editTitle.trim();
+      const content = this.editContent.trim();
+      if (!title || !content) {
+        this.$message?.warning('标题和内容不能为空');
+        return;
+      }
+      const isCustom = !!this.currentArticle.isCustom;
+      const currentId = this.currentArticle.id;
+      const url = isCustom
+        ? `/api/custom-articles/${this.currentArticle.realId}`
+        : `/api/articles/${currentId}`;
+      const payload = {
+        title,
+        content,
+        difficulty: isCustom
+          ? 'custom'
+          : (this.currentArticle.difficulty === '自定义' ? 'custom' : this.currentArticle.difficulty),
+      };
+      this.isAutoSaving = true;
+      try {
+        await axios.put(url, payload);
+        this.lastSavedAt = new Date();
+        this.$message?.success('已自动保存');
+        // 刷新列表并保持当前选中
+        await this.loadData();
+        const restored = this.articles.find(a => a.id === currentId);
+        if (restored) {
+          this.currentArticle = restored;
+          this.selectedArticleId = currentId;
+        }
+        // 内容可能变化，重置练习进度
+        this.resetPractice();
+      } catch (error) {
+        console.error('自动保存失败:', error);
+        this.$message?.error('保存失败，请重试');
+      } finally {
+        this.isAutoSaving = false;
+      }
     },
     async handleDeleteCustomArticle() {
       if (!this.currentArticle || !this.currentArticle.isCustom) return;
@@ -861,7 +966,38 @@ export default {
   margin-top: 16px;
 }
 
+.inline-edit-panel {
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 4px;
+}
+
+.edit-title-input {
+  margin-bottom: 8px;
+}
+
+.edit-content-input {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.edit-hint {
+  flex: 1;
+  color: #999;
+  font-size: 12px;
+}
+
 .original-text {
+  background-color: #f5f5f5;
   padding: 16px;
   background-color: #f9f9f9;
   border: 1px solid #ddd;
