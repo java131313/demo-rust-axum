@@ -19,6 +19,25 @@
               <a-select-option value="auto">自动打字</a-select-option>
             </a-select>
           </div>
+          <div class="custom-article-selector">
+            <label>自定义：</label>
+            <a-select
+              v-model:value="selectedCustomId"
+              @change="selectCustomText"
+              placeholder="选择自定义文章"
+              style="width: 220px"
+              allow-clear
+            >
+              <a-select-option v-for="t in customTexts" :key="t.id" :value="t.id">
+                {{ t.title }}
+              </a-select-option>
+            </a-select>
+            <a-button type="dashed" @click="openAddCustomArticleModal">添加</a-button>
+            <template v-if="currentText.isCustom">
+              <a-button type="dashed" @click="openEditCustomArticleModal">编辑</a-button>
+              <a-button type="dashed" danger @click="handleDeleteCustomArticle">删除</a-button>
+            </template>
+          </div>
         </div>
       </div>
 
@@ -90,11 +109,36 @@
         <a-button @click="toggleZhuyinHint">{{ showZhuyinHint ? '隐藏注音' : '显示注音' }}</a-button>
       </div>
     </div>
+
+    <!-- 添加/编辑自定义文章弹窗 -->
+    <a-modal
+      v-model:open="showCustomArticleModal"
+      :title="editingCustomArticleId === null ? '添加自定义繁体文章' : '编辑自定义文章'"
+      @ok="handleSaveCustomArticle"
+      @cancel="closeCustomArticleModal"
+      :confirm-loading="isSavingCustomArticle"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="文章标题" required>
+          <a-input v-model:value="customArticleTitle" placeholder="请输入文章标题" maxlength="50" />
+        </a-form-item>
+        <a-form-item label="文章内容" required>
+          <a-textarea
+            v-model:value="customArticleContent"
+            placeholder="请输入繁体中文文章内容"
+            :auto-size="{ minRows: 4, maxRows: 8 }"
+            maxlength="5000"
+            show-count
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script>
 import axios from '../api';
+import { Modal } from 'ant-design-vue';
 import VirtualKeyboard from './VirtualKeyboard.vue';
 
 export default {
@@ -105,6 +149,8 @@ export default {
   data() {
     return {
       texts: [],
+      customTexts: [],
+      selectedCustomId: null,
       bopomofoChars: [],
       currentText: { title: '', content: '', difficulty: 'medium' },
       selectedDifficulty: 'medium',
@@ -119,7 +165,13 @@ export default {
       timeElapsed: 0,
       timer: null,
       autoTimer: null,
-      showZhuyinHint: true
+      showZhuyinHint: true,
+      // 自定义文章相关
+      showCustomArticleModal: false,
+      customArticleTitle: '',
+      customArticleContent: '',
+      isSavingCustomArticle: false,
+      editingCustomArticleId: null
     };
   },
   computed: {
@@ -163,6 +215,109 @@ export default {
       } catch (error) {
         console.error('加载繁体中文文章失败:', error);
       }
+      this.loadCustomTexts();
+    },
+    async loadCustomTexts() {
+      try {
+        const response = await axios.get('/custom-articles', { params: { lang: 'tw' } });
+        this.customTexts = (response.data || []).map(a => ({
+          ...a,
+          id: `custom-${a.id}`,
+          realId: a.id,
+          isCustom: true,
+        }));
+      } catch (error) {
+        console.error('加载自定义文章失败:', error);
+      }
+    },
+    selectCustomText() {
+      const t = this.customTexts.find(x => x.id === this.selectedCustomId);
+      if (t) {
+        this.currentText = t;
+        this.resetPractice();
+      } else {
+        // 清除选择后回退到系统文章
+        this.selectText();
+      }
+    },
+    openAddCustomArticleModal() {
+      this.editingCustomArticleId = null;
+      this.customArticleTitle = '';
+      this.customArticleContent = '';
+      this.showCustomArticleModal = true;
+    },
+    openEditCustomArticleModal() {
+      if (!this.currentText.isCustom) return;
+      this.editingCustomArticleId = this.currentText.realId;
+      this.customArticleTitle = this.currentText.title;
+      this.customArticleContent = this.currentText.content;
+      this.showCustomArticleModal = true;
+    },
+    closeCustomArticleModal() {
+      this.showCustomArticleModal = false;
+      this.customArticleTitle = '';
+      this.customArticleContent = '';
+      this.editingCustomArticleId = null;
+    },
+    async handleSaveCustomArticle() {
+      const title = this.customArticleTitle.trim();
+      const content = this.customArticleContent.trim();
+      if (!title) {
+        this.$message?.warning('请输入文章标题');
+        return;
+      }
+      if (!content) {
+        this.$message?.warning('请输入文章内容');
+        return;
+      }
+      this.isSavingCustomArticle = true;
+      const isEditing = this.editingCustomArticleId !== null;
+      try {
+        const payload = { title, content, difficulty: 'custom', lang: 'tw' };
+        if (isEditing) {
+          await axios.put(`/custom-articles/${this.editingCustomArticleId}`, payload);
+          this.$message?.success('自定义文章更新成功');
+        } else {
+          await axios.post('/custom-articles', payload);
+          this.$message?.success('自定义文章添加成功');
+        }
+        const targetId = isEditing ? `custom-${this.editingCustomArticleId}` : null;
+        this.closeCustomArticleModal();
+        await this.loadCustomTexts();
+        if (isEditing && targetId) {
+          this.selectedCustomId = targetId;
+          this.selectCustomText();
+        }
+      } catch (error) {
+        console.error(isEditing ? '更新自定义文章失败:' : '保存自定义文章失败:', error);
+        this.$message?.error(isEditing ? '更新失败，请重试' : '保存失败，请重试');
+      } finally {
+        this.isSavingCustomArticle = false;
+      }
+    },
+    handleDeleteCustomArticle() {
+      if (!this.currentText.isCustom) return;
+      const realId = this.currentText.realId;
+      const articleTitle = this.currentText.title;
+      Modal.confirm({
+        title: '删除自定义文章',
+        content: `确定删除「${articleTitle}」吗？删除后不可恢复。`,
+        okText: '删除',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: async () => {
+          try {
+            await axios.delete(`/custom-articles/${realId}`);
+            this.$message?.success('删除成功');
+            this.selectedCustomId = null;
+            await this.loadCustomTexts();
+            this.selectText();
+          } catch (error) {
+            console.error('删除自定义文章失败:', error);
+            this.$message?.error('删除失败，请重试');
+          }
+        },
+      });
     },
     async loadBopomofoChars() {
       try {
@@ -186,7 +341,10 @@ export default {
       this.resetPractice();
     },
     handleDifficultyChange() {
-      this.selectText();
+      // 正在练习自定义文章时切换难度不打断
+      if (!this.currentText.isCustom) {
+        this.selectText();
+      }
     },
     handleModeChange() {
       this.resetPractice();
@@ -363,6 +521,13 @@ export default {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.custom-article-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .text-display {

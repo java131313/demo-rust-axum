@@ -92,7 +92,7 @@ const router = useRouter();
 const user = ref(null);
 
 const activeTabKey = ref('1');
-const keyboardEnabled = ref(true);
+const keyboardEnabled = ref(false);
 const keyboardVisible = ref(false);
 const keyboard = reactive({
   activeKey: null,

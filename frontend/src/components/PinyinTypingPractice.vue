@@ -330,7 +330,7 @@ export default {
       try {
         const [articlesRes, customRes] = await Promise.all([
           axios.get('/api/articles').catch(() => ({ data: [] })),
-          axios.get('/api/custom-articles').catch(() => ({ data: [] })),
+          axios.get('/api/custom-articles', { params: { lang: 'zh' } }).catch(() => ({ data: [] })),
         ]);
         const systemArticles = (articlesRes.data || []).map(a => ({
           ...a,

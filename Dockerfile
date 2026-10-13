@@ -30,6 +30,7 @@ RUN mkdir src && echo "fn main() {}" > src/main.rs && \
 COPY src ./src
 COPY config.yaml ./
 COPY data ./data
+COPY liaozhai_articles.json ./
 COPY --from=frontend /fe/dist ./frontend/dist
 RUN touch src/main.rs && cargo build --release
 
@@ -51,6 +52,10 @@ COPY --from=builder /usr/src/demo-rust-axum/target/release/demo-rust-axum ./
 # 复制配置文件和五笔字典数据（SQLite首次启动时导入）
 COPY --from=builder /usr/src/demo-rust-axum/config.yaml ./
 COPY --from=builder /usr/src/demo-rust-axum/data ./data
+
+# 种子数据目录：存储卷挂载会遮蔽/app/data，容器内从/app/seed读取种子文件
+COPY --from=builder /usr/src/demo-rust-axum/data ./seed
+COPY --from=builder /usr/src/demo-rust-axum/liaozhai_articles.json ./seed/
 
 # SQLite数据目录（可挂载卷持久化）
 ENV RUST_LOG=info

@@ -8,7 +8,15 @@
             <a-tab-pane key="katakana" tab="片假名"></a-tab-pane>
             <a-tab-pane key="kanji" tab="汉字"></a-tab-pane>
             <a-tab-pane key="mixed" tab="混合"></a-tab-pane>
+            <a-tab-pane key="custom" tab="自定义"></a-tab-pane>
           </a-tabs>
+        </div>
+        <div v-if="selectedTab === 'custom'" class="custom-article-bar">
+          <a-button type="dashed" @click="openAddCustomModal">添加自定义文章</a-button>
+          <template v-if="currentText.isCustom">
+            <a-button type="dashed" @click="openEditCustomModal">编辑</a-button>
+            <a-button type="dashed" danger @click="handleDeleteCustom">删除</a-button>
+          </template>
         </div>
         <div class="text-container">
           <h3>{{ currentText.title }}</h3>
@@ -78,6 +86,30 @@
             </a-radio-group>
           </div>
         </div>
+
+        <!-- 添加/编辑自定义文章弹窗 -->
+        <a-modal
+          v-model:open="showCustomArticleModal"
+          :title="editingCustomId === null ? '添加自定义日语文章' : '编辑自定义文章'"
+          @ok="handleSaveCustom"
+          @cancel="closeCustomModal"
+          :confirm-loading="isSavingCustom"
+        >
+          <a-form layout="vertical">
+            <a-form-item label="文章标题" required>
+              <a-input v-model:value="customTitle" placeholder="请输入文章标题" maxlength="50" />
+            </a-form-item>
+            <a-form-item label="文章内容" required>
+              <a-textarea
+                v-model:value="customContent"
+                placeholder="请输入日语文章内容"
+                :auto-size="{ minRows: 4, maxRows: 8 }"
+                maxlength="5000"
+                show-count
+              />
+            </a-form-item>
+          </a-form>
+        </a-modal>
       </div>
     </a-card>
   </div>
@@ -85,8 +117,8 @@
 
 <script setup>
 import { ref, onMounted, watch, computed, inject, nextTick } from 'vue';
-import { message } from 'ant-design-vue';
-import { getJapaneseTexts } from '../api';
+import { message, Modal } from 'ant-design-vue';
+import { getJapaneseTexts, getCustomArticles, createCustomArticle, updateCustomArticle, deleteCustomArticle } from '../api';
 
 // 注入虚拟键盘相关功能
 const { setKeyboard, registerKeyboardSync } = inject('virtualKeyboard', {});
@@ -104,6 +136,29 @@ const selectedMode = ref('manual');
 const selectedTab = ref('hiragana');
 const autoTimer = ref(null);
 const isLoading = ref(true);
+
+// 自定义文章相关
+const customTexts = ref([]);
+const showCustomArticleModal = ref(false);
+const customTitle = ref('');
+const customContent = ref('');
+const isSavingCustom = ref(false);
+const editingCustomId = ref(null);
+
+const loadCustomTexts = async () => {
+  try {
+    const res = await getCustomArticles('ja');
+    customTexts.value = (res.data || []).map(a => ({
+      ...a,
+      id: `custom-${a.id}`,
+      realId: a.id,
+      isCustom: true,
+      type: 'custom',
+    }));
+  } catch (error) {
+    console.error('加载自定义文章失败:', error);
+  }
+};
 
 const currentText = computed(() => {
   if (japaneseTexts.value.length === 0) {
@@ -152,6 +207,16 @@ const loadJapaneseTexts = async () => {
 };
 
 const filterTextsByTab = () => {
+  // 自定义tab：直接展示自定义文章，不走难度/类型过滤
+  if (selectedTab.value === 'custom') {
+    japaneseTexts.value = [...customTexts.value];
+    currentTextIndex.value = 0;
+    correctCount.value = 0;
+    userInput.value = '';
+    startTime.value = Date.now();
+    return;
+  }
+
   let filtered = [...originalJapaneseTexts.value];
   
   // 首先根据难度过滤
@@ -187,7 +252,98 @@ const filterTextsByTab = () => {
 };
 
 const handleTabChange = () => {
+  if (selectedTab.value === 'custom') {
+    loadCustomTexts();
+  }
   filterTextsByTab();
+};
+
+// 自定义文章：新增/编辑/删除
+const openAddCustomModal = () => {
+  editingCustomId.value = null;
+  customTitle.value = '';
+  customContent.value = '';
+  showCustomArticleModal.value = true;
+};
+
+const openEditCustomModal = () => {
+  const t = currentText.value;
+  if (!t.isCustom) return;
+  editingCustomId.value = t.realId;
+  customTitle.value = t.title;
+  customContent.value = t.content;
+  showCustomArticleModal.value = true;
+};
+
+const closeCustomModal = () => {
+  showCustomArticleModal.value = false;
+  customTitle.value = '';
+  customContent.value = '';
+  editingCustomId.value = null;
+};
+
+const handleSaveCustom = async () => {
+  const title = customTitle.value.trim();
+  const content = customContent.value.trim();
+  if (!title) {
+    message.warning('请输入文章标题');
+    return;
+  }
+  if (!content) {
+    message.warning('请输入文章内容');
+    return;
+  }
+  isSavingCustom.value = true;
+  const isEditing = editingCustomId.value !== null;
+  try {
+    const payload = { title, content, difficulty: 'custom', lang: 'ja' };
+    if (isEditing) {
+      await updateCustomArticle(editingCustomId.value, payload);
+      message.success('自定义文章更新成功');
+    } else {
+      await createCustomArticle(payload);
+      message.success('自定义文章添加成功');
+    }
+    const targetId = isEditing ? `custom-${editingCustomId.value}` : null;
+    closeCustomModal();
+    await loadCustomTexts();
+    filterTextsByTab();
+    // 编辑后定位回该文章
+    if (targetId) {
+      const idx = japaneseTexts.value.findIndex(a => a.id === targetId);
+      if (idx >= 0) {
+        currentTextIndex.value = idx;
+      }
+    }
+  } catch (error) {
+    console.error(isEditing ? '更新自定义文章失败:' : '保存自定义文章失败:', error);
+    message.error(isEditing ? '更新失败，请重试' : '保存失败，请重试');
+  } finally {
+    isSavingCustom.value = false;
+  }
+};
+
+const handleDeleteCustom = () => {
+  const t = currentText.value;
+  if (!t.isCustom) return;
+  Modal.confirm({
+    title: '删除自定义文章',
+    content: `确定删除「${t.title}」吗？删除后不可恢复。`,
+    okText: '删除',
+    okType: 'danger',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        await deleteCustomArticle(t.realId);
+        message.success('删除成功');
+        await loadCustomTexts();
+        filterTextsByTab();
+      } catch (error) {
+        console.error('删除自定义文章失败:', error);
+        message.error('删除失败，请重试');
+      }
+    },
+  });
 };
 
 const filterTextsByDifficulty = () => {
@@ -313,6 +469,7 @@ const startAutoTyping = () => {
 
 onMounted(() => {
   loadJapaneseTexts();
+  loadCustomTexts();
   
   // 注册键盘同步函数
   if (registerKeyboardSync) {
@@ -346,6 +503,12 @@ onMounted(() => {
 
 .tab-container {
   margin-bottom: 10px;
+}
+
+.custom-article-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .text-container {

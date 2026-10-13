@@ -134,6 +134,9 @@ pub struct NewArticle {
     pub title: String,
     pub content: String,
     pub difficulty: String,
+    /// 语言: zh(默认)/ja/tw
+    #[serde(default)]
+    pub lang: Option<String>,
 }
 
 /// A Wubi root character record.
@@ -293,10 +296,12 @@ pub async fn delete_article(
 
 pub async fn get_custom_articles(
     State(state): State<AppState>,
+    axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<Vec<crate::config::Article>>, StatusCode> {
+    let lang = params.get("lang").map(|s| s.as_str()).unwrap_or("zh");
     let articles = state
         .db
-        .get_custom_articles()
+        .get_custom_articles(lang)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(articles))
@@ -306,9 +311,10 @@ pub async fn create_custom_article(
     State(state): State<AppState>,
     Json(payload): Json<NewArticle>,
 ) -> Result<(StatusCode, Json<crate::config::Article>), (StatusCode, String)> {
+    let lang = payload.lang.clone().unwrap_or_else(|| "zh".to_string());
     let article = state
         .db
-        .create_custom_article(&payload.title, &payload.content, &payload.difficulty)
+        .create_custom_article(&payload.title, &payload.content, &payload.difficulty, &lang)
         .await
         .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err))?;
     Ok((StatusCode::CREATED, Json(article)))

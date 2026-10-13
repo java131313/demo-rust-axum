@@ -45,9 +45,9 @@ export const getJapaneseTexts = () => {
   return api.get('/japanese-texts');
 };
 
-// 获取自定义文章
-export const getCustomArticles = () => {
-  return api.get('/custom-articles');
+// 获取自定义文章（lang: zh/ja/tw，默认zh）
+export const getCustomArticles = (lang = 'zh') => {
+  return api.get('/custom-articles', { params: { lang } });
 };
 
 // 创建自定义文章

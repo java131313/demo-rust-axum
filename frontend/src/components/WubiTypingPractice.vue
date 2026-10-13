@@ -42,9 +42,17 @@
               {{ article.title }} ({{ article.difficulty }})
             </a-select-option>
           </a-select>
-          <a-button @click="showCustomArticleModal = true" type="dashed">
+          <a-button @click="openAddCustomArticleModal" type="dashed">
             添加自定义文章
           </a-button>
+          <template v-if="currentArticle && currentArticle.isCustom">
+            <a-button @click="openEditCustomArticleModal" type="dashed">
+              编辑
+            </a-button>
+            <a-button @click="handleDeleteCustomArticle" type="dashed" danger>
+              删除
+            </a-button>
+          </template>
         </a-space>
       </div>
       
@@ -156,10 +164,10 @@
     </a-card>
     
 
-    <!-- 添加自定义文章弹窗 -->
+    <!-- 添加/编辑自定义文章弹窗 -->
     <a-modal
       v-model:open="showCustomArticleModal"
-      title="添加自定义简体中文文章"
+      :title="editingCustomArticleId === null ? '添加自定义简体中文文章' : '编辑自定义文章'"
       @ok="handleSaveCustomArticle"
       @cancel="closeCustomArticleModal"
       :confirm-loading="isSavingCustomArticle"
@@ -188,6 +196,7 @@
 
 <script>
 import axios from 'axios';
+import { Modal } from 'ant-design-vue';
 import WubiGraph from './WubiGraph.vue';
 
 export default {
@@ -244,6 +253,8 @@ export default {
       showCustomArticleModal: false,
       customArticleTitle: '',
       customArticleContent: '',
+      // null表示新增模式，数字表示正在编辑的自定义文章ID
+      editingCustomArticleId: null,
       isSavingCustomArticle: false,
     };
   },
@@ -368,7 +379,7 @@ export default {
             console.error('加载文章失败:', error);
             return { data: [] };
           }),
-          axios.get('/api/custom-articles').catch(error => {
+          axios.get('/api/custom-articles', { params: { lang: 'zh' } }).catch(error => {
             console.error('加载自定义文章失败:', error);
             return { data: [] };
           }),
@@ -378,9 +389,16 @@ export default {
           })
         ]);
 
-        const systemArticles = articlesRes.data || [];
+        const systemArticles = (articlesRes.data || []).map(a => ({
+          ...a,
+          isCustom: false,
+        }));
+        // 自定义文章与系统文章分表存储，id可能冲突，使用 custom- 前缀区分
         const customArticles = (customRes.data || []).map(a => ({
           ...a,
+          id: `custom-${a.id}`,
+          realId: a.id,
+          isCustom: true,
           difficulty: a.difficulty === 'custom' ? '自定义' : a.difficulty,
         }));
         this.articles = [...systemArticles, ...customArticles];
@@ -400,6 +418,45 @@ export default {
       this.showCustomArticleModal = false;
       this.customArticleTitle = '';
       this.customArticleContent = '';
+      this.editingCustomArticleId = null;
+    },
+    openAddCustomArticleModal() {
+      this.editingCustomArticleId = null;
+      this.customArticleTitle = '';
+      this.customArticleContent = '';
+      this.showCustomArticleModal = true;
+    },
+    openEditCustomArticleModal() {
+      if (!this.currentArticle || !this.currentArticle.isCustom) return;
+      this.editingCustomArticleId = this.currentArticle.realId;
+      this.customArticleTitle = this.currentArticle.title;
+      this.customArticleContent = this.currentArticle.content;
+      this.showCustomArticleModal = true;
+    },
+    async handleDeleteCustomArticle() {
+      if (!this.currentArticle || !this.currentArticle.isCustom) return;
+      const realId = this.currentArticle.realId;
+      const articleTitle = this.currentArticle.title;
+      Modal.confirm({
+        title: '删除自定义文章',
+        content: `确定删除「${articleTitle}」吗？删除后不可恢复。`,
+        okText: '删除',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: async () => {
+          try {
+            await axios.delete(`/api/custom-articles/${realId}`);
+            this.$message?.success('删除成功');
+            this.selectedArticleId = null;
+            this.currentArticle = null;
+            this.resetPractice();
+            await this.loadData();
+          } catch (error) {
+            console.error('删除自定义文章失败:', error);
+            this.$message?.error('删除失败，请重试');
+          }
+        },
+      });
     },
     async handleSaveCustomArticle() {
       const title = this.customArticleTitle.trim();
@@ -413,22 +470,37 @@ export default {
         return;
       }
       this.isSavingCustomArticle = true;
+      const isEditing = this.editingCustomArticleId !== null;
       try {
-        await axios.post('/api/custom-articles', {
+        const payload = {
           title,
           content,
           difficulty: 'custom',
-        });
-        this.$message?.success('自定义文章添加成功');
+        };
+        if (isEditing) {
+          await axios.put(`/api/custom-articles/${this.editingCustomArticleId}`, payload);
+          this.$message?.success('自定义文章更新成功');
+        } else {
+          await axios.post('/api/custom-articles', payload);
+          this.$message?.success('自定义文章添加成功');
+        }
+        const targetId = isEditing ? `custom-${this.editingCustomArticleId}` : null;
         this.closeCustomArticleModal();
         await this.loadData();
-        if (this.articles.length > 0) {
+        if (isEditing && targetId) {
+          // 编辑后重新选中该文章
+          const updated = this.articles.find(a => a.id === targetId);
+          if (updated) {
+            this.selectedArticleId = targetId;
+            this.handleArticleChange(targetId);
+          }
+        } else if (this.articles.length > 0) {
           this.selectedArticleId = this.articles[this.articles.length - 1].id;
           this.handleArticleChange(this.selectedArticleId);
         }
       } catch (error) {
-        console.error('保存自定义文章失败:', error);
-        this.$message?.error('保存失败，请重试');
+        console.error(isEditing ? '更新自定义文章失败:' : '保存自定义文章失败:', error);
+        this.$message?.error(isEditing ? '更新失败，请重试' : '保存失败，请重试');
       } finally {
         this.isSavingCustomArticle = false;
       }

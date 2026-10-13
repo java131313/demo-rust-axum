@@ -185,9 +185,13 @@ impl Database for CachedDatabase {
         Ok(())
     }
 
-    async fn get_custom_articles(&self) -> Result<Vec<Article>, String> {
-        self.cached("custom-articles", LIST_TTL, self.inner.get_custom_articles())
-            .await
+    async fn get_custom_articles(&self, lang: &str) -> Result<Vec<Article>, String> {
+        self.cached(
+            &format!("custom-articles:{}", lang),
+            LIST_TTL,
+            self.inner.get_custom_articles(lang),
+        )
+        .await
     }
 
     async fn create_custom_article(
@@ -195,18 +199,22 @@ impl Database for CachedDatabase {
         title: &str,
         content: &str,
         difficulty: &str,
+        lang: &str,
     ) -> Result<Article, String> {
         let article = self
             .inner
-            .create_custom_article(title, content, difficulty)
+            .create_custom_article(title, content, difficulty, lang)
             .await?;
-        self.invalidate(&["custom-articles"]).await;
+        self.invalidate(&[&format!("custom-articles:{}", lang)])
+            .await;
         Ok(article)
     }
 
     async fn delete_custom_article(&self, id: i32) -> Result<(), String> {
         self.inner.delete_custom_article(id).await?;
-        self.invalidate(&["custom-articles"]).await;
+        // 各语言的列表缓存都失效（无法确定文章所属语言）
+        self.invalidate(&["custom-articles:zh", "custom-articles:ja", "custom-articles:tw"])
+            .await;
         Ok(())
     }
 
@@ -221,7 +229,8 @@ impl Database for CachedDatabase {
             .inner
             .update_custom_article(id, title, content, difficulty)
             .await?;
-        self.invalidate(&["custom-articles"]).await;
+        self.invalidate(&["custom-articles:zh", "custom-articles:ja", "custom-articles:tw"])
+            .await;
         Ok(article)
     }
 

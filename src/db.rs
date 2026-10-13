@@ -23,6 +23,13 @@ struct WubiDictEntry {
     remark: String,
 }
 
+/// 聊斋文章条目（liaozhai_articles.json）
+#[derive(Debug, Deserialize)]
+struct LiaozhaiEntry {
+    title: String,
+    content: String,
+}
+
 /// 数据库池的枚举类型
 #[derive(Clone)]
 pub enum DbPool {
@@ -87,8 +94,8 @@ pub trait Database: Send + Sync {
     /// 删除文章
     async fn delete_article(&self, id: i32) -> Result<(), String>;
 
-    /// 获取所有自定义文章
-    async fn get_custom_articles(&self) -> Result<Vec<Article>, String>;
+    /// 获取所有自定义文章（按语言过滤，lang: "zh"/"ja"/"tw"）
+    async fn get_custom_articles(&self, lang: &str) -> Result<Vec<Article>, String>;
 
     /// 创建自定义文章
     async fn create_custom_article(
@@ -96,6 +103,7 @@ pub trait Database: Send + Sync {
         title: &str,
         content: &str,
         difficulty: &str,
+        lang: &str,
     ) -> Result<Article, String>;
 
     /// 删除自定义文章
@@ -272,13 +280,20 @@ impl Database for MySqlDatabase {
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
                 content TEXT NOT NULL,
-                difficulty VARCHAR(10) DEFAULT 'custom'
+                difficulty VARCHAR(10) DEFAULT 'custom',
+                lang VARCHAR(10) NOT NULL DEFAULT 'zh'
             )
             "#,
         )
         .execute(&self.pool)
         .await
         .map_err(|e| e.to_string())?;
+        // 迁移：为既有custom_articles表补充lang列（列已存在时忽略错误）
+        let _ = sqlx::query(
+            "ALTER TABLE custom_articles ADD COLUMN lang VARCHAR(10) NOT NULL DEFAULT 'zh'",
+        )
+        .execute(&self.pool)
+        .await;
 
         sqlx::query(
             r#"
@@ -1270,10 +1285,11 @@ impl Database for MySqlDatabase {
         }
     }
 
-    async fn get_custom_articles(&self) -> Result<Vec<Article>, String> {
+    async fn get_custom_articles(&self, lang: &str) -> Result<Vec<Article>, String> {
         sqlx::query_as::<_, (i32, String, String, String)>(
-            "SELECT id, title, content, difficulty FROM custom_articles ORDER BY id",
+            "SELECT id, title, content, difficulty FROM custom_articles WHERE lang = ? ORDER BY id",
         )
+        .bind(lang)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| e.to_string())
@@ -1294,12 +1310,14 @@ impl Database for MySqlDatabase {
         title: &str,
         content: &str,
         difficulty: &str,
+        lang: &str,
     ) -> Result<Article, String> {
         let result =
-            sqlx::query("INSERT INTO custom_articles (title, content, difficulty) VALUES (?, ?, ?)")
+            sqlx::query("INSERT INTO custom_articles (title, content, difficulty, lang) VALUES (?, ?, ?, ?)")
                 .bind(title)
                 .bind(content)
                 .bind(difficulty)
+                .bind(lang)
                 .execute(&self.pool)
                 .await
                 .map_err(|e| e.to_string())?;
@@ -2325,7 +2343,7 @@ impl Database for RedisDatabase {
         Ok(())
     }
 
-    async fn get_custom_articles(&self) -> Result<Vec<Article>, String> {
+    async fn get_custom_articles(&self, lang: &str) -> Result<Vec<Article>, String> {
         let mut conn = self.get_connection().await?;
 
         let article_ids: Vec<String> = conn
@@ -2347,6 +2365,15 @@ impl Database for RedisDatabase {
                 .hget(&format!("wubi:custom:article:{}", id), "difficulty")
                 .await
                 .map_err(|e| format!("Failed to get difficulty: {}", e))?;
+            let article_lang: Option<String> = conn
+                .hget(&format!("wubi:custom:article:{}", id), "lang")
+                .await
+                .map_err(|e| format!("Failed to get lang: {}", e))?;
+
+            // 旧数据无lang字段时按zh处理
+            if article_lang.as_deref().unwrap_or("zh") != lang {
+                continue;
+            }
 
             articles.push(Article {
                 id: id.parse().unwrap_or(0),
@@ -2365,6 +2392,7 @@ impl Database for RedisDatabase {
         title: &str,
         content: &str,
         difficulty: &str,
+        lang: &str,
     ) -> Result<Article, String> {
         let mut conn = self.get_connection().await?;
 
@@ -2382,6 +2410,7 @@ impl Database for RedisDatabase {
                     ("title", title.to_string()),
                     ("content", content.to_string()),
                     ("difficulty", difficulty.to_string()),
+                    ("lang", lang.to_string()),
                 ],
             )
             .await
@@ -3480,11 +3509,17 @@ impl Database for MongoDatabase {
         Ok(())
     }
 
-    async fn get_custom_articles(&self) -> Result<Vec<Article>, String> {
+    async fn get_custom_articles(&self, lang: &str) -> Result<Vec<Article>, String> {
         let db = self.get_db();
         let collection = db.collection::<Document>("custom_articles");
+        // 旧文档无lang字段时按zh处理
+        let filter = if lang == "zh" {
+            doc! {"$or": [{"lang": "zh"}, {"lang": {"$exists": false}}]}
+        } else {
+            doc! {"lang": lang}
+        };
         let mut cursor = collection
-            .find(doc! {}, None)
+            .find(filter, None)
             .await
             .map_err(|e: mongodb::error::Error| format!("Failed to query custom articles: {}", e))?;
         let mut articles = Vec::new();
@@ -3524,10 +3559,11 @@ impl Database for MongoDatabase {
         title: &str,
         content: &str,
         difficulty: &str,
+        lang: &str,
     ) -> Result<Article, String> {
         let db = self.get_db();
         let collection = db.collection::<Document>("custom_articles");
-        let doc = doc! { "title": title, "content": content, "difficulty": difficulty };
+        let doc = doc! { "title": title, "content": content, "difficulty": difficulty, "lang": lang };
         let result = collection
             .insert_one(doc, None)
             .await
@@ -4206,13 +4242,20 @@ impl Database for PostgresDatabase {
                 id SERIAL PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
                 content TEXT NOT NULL,
-                difficulty VARCHAR(10) DEFAULT 'custom'
+                difficulty VARCHAR(10) DEFAULT 'custom',
+                lang VARCHAR(10) NOT NULL DEFAULT 'zh'
             )
             "#,
         )
         .execute(&self.pool)
         .await
         .map_err(|e| e.to_string())?;
+        // 迁移：为既有custom_articles表补充lang列（列已存在时忽略错误）
+        let _ = sqlx::query(
+            "ALTER TABLE custom_articles ADD COLUMN lang VARCHAR(10) NOT NULL DEFAULT 'zh'",
+        )
+        .execute(&self.pool)
+        .await;
 
         sqlx::query(
             r#"
@@ -5346,10 +5389,11 @@ impl Database for PostgresDatabase {
         }
     }
 
-    async fn get_custom_articles(&self) -> Result<Vec<Article>, String> {
+    async fn get_custom_articles(&self, lang: &str) -> Result<Vec<Article>, String> {
         sqlx::query_as::<_, (i32, String, String, String)>(
-            "SELECT id, title, content, difficulty FROM custom_articles ORDER BY id",
+            "SELECT id, title, content, difficulty FROM custom_articles WHERE lang = $1 ORDER BY id",
         )
+        .bind(lang)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| e.to_string())
@@ -5370,13 +5414,15 @@ impl Database for PostgresDatabase {
         title: &str,
         content: &str,
         difficulty: &str,
+        lang: &str,
     ) -> Result<Article, String> {
         let article = sqlx::query_as::<_, (i32, String, String, String)>(
-            "INSERT INTO custom_articles (title, content, difficulty) VALUES ($1, $2, $3) RETURNING id, title, content, difficulty"
+            "INSERT INTO custom_articles (title, content, difficulty, lang) VALUES ($1, $2, $3, $4) RETURNING id, title, content, difficulty"
         )
         .bind(title)
         .bind(content)
         .bind(difficulty)
+        .bind(lang)
         .fetch_one(&self.pool)
         .await
         .map_err(|e| e.to_string())
@@ -5913,13 +5959,20 @@ impl Database for SqliteDatabase {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title VARCHAR(255) NOT NULL,
                 content TEXT NOT NULL,
-                difficulty VARCHAR(10) DEFAULT 'custom'
+                difficulty VARCHAR(10) DEFAULT 'custom',
+                lang VARCHAR(10) NOT NULL DEFAULT 'zh'
             )
             "#,
         )
         .execute(&self.pool)
         .await
         .map_err(|e| e.to_string())?;
+        // 迁移：为既有custom_articles表补充lang列（列已存在时忽略错误）
+        let _ = sqlx::query(
+            "ALTER TABLE custom_articles ADD COLUMN lang VARCHAR(10) NOT NULL DEFAULT 'zh'",
+        )
+        .execute(&self.pool)
+        .await;
 
         sqlx::query(
             r#"
@@ -6729,8 +6782,12 @@ impl Database for SqliteDatabase {
             .map_err(|e| e.to_string())?;
 
         if char_count == 0 {
-            let dict_path = "data/wubi86_converted.json";
-            if Path::new(dict_path).exists() {
+            // 优先从data/读取（本地开发），否则从seed/读取（容器内存储卷会遮蔽/app/data）
+            let dict_path = ["data/wubi86_converted.json", "seed/wubi86_converted.json"]
+                .iter()
+                .find(|p| Path::new(p).exists())
+                .map(|p| p.to_string());
+            if let Some(dict_path) = dict_path {
                 let content = fs::read_to_string(dict_path)
                     .map_err(|e| format!("Failed to read wubi dictionary: {}", e))?;
                 let entries: Vec<WubiDictEntry> = serde_json::from_str(&content)
@@ -6760,7 +6817,68 @@ impl Database for SqliteDatabase {
 
                 println!("Wubi dictionary import complete: {} entries", entries_len);
             } else {
-                println!("Wubi dictionary file not found: {}, skip import", dict_path);
+                println!("Wubi dictionary file not found in data/ or seed/, skip import");
+            }
+        }
+
+        // 启动时导入聊斋文章到自定义文章（lang=zh），用seed_meta表保证只导入一次
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS seed_meta (
+                key VARCHAR(64) PRIMARY KEY,
+                seeded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            "#,
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        let liaozhai_seeded: Option<String> =
+            sqlx::query_scalar("SELECT key FROM seed_meta WHERE key = 'liaozhai'")
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(|e| e.to_string())?;
+
+        if liaozhai_seeded.is_none() {
+            let seed_path = [
+                "liaozhai_articles.json",
+                "data/liaozhai_articles.json",
+                "seed/liaozhai_articles.json",
+            ]
+            .iter()
+            .find(|p| Path::new(p).exists())
+            .map(|p| p.to_string());
+
+            if let Some(seed_path) = seed_path {
+                let content = fs::read_to_string(&seed_path)
+                    .map_err(|e| format!("Failed to read liaozhai articles: {}", e))?;
+                let entries: Vec<LiaozhaiEntry> = serde_json::from_str(&content)
+                    .map_err(|e| format!("Failed to parse liaozhai articles: {}", e))?;
+
+                let entries_len = entries.len();
+                println!("Importing {} Liaozhai articles to SQLite...", entries_len);
+
+                let mut tx = self.pool.begin().await.map_err(|e| e.to_string())?;
+                for entry in entries {
+                    sqlx::query(
+                        "INSERT INTO custom_articles (title, content, difficulty, lang) VALUES (?, ?, 'custom', 'zh')"
+                    )
+                    .bind(&entry.title)
+                    .bind(&entry.content)
+                    .execute(&mut *tx)
+                    .await
+                    .map_err(|e| e.to_string())?;
+                }
+                sqlx::query("INSERT INTO seed_meta (key) VALUES ('liaozhai')")
+                    .execute(&mut *tx)
+                    .await
+                    .map_err(|e| e.to_string())?;
+                tx.commit().await.map_err(|e| e.to_string())?;
+
+                println!("Liaozhai articles import complete: {} entries", entries_len);
+            } else {
+                println!("liaozhai_articles.json not found, skip import");
             }
         }
 
@@ -6951,10 +7069,11 @@ impl Database for SqliteDatabase {
         }
     }
 
-    async fn get_custom_articles(&self) -> Result<Vec<Article>, String> {
+    async fn get_custom_articles(&self, lang: &str) -> Result<Vec<Article>, String> {
         sqlx::query_as::<_, (i32, String, String, String)>(
-            "SELECT id, title, content, difficulty FROM custom_articles ORDER BY id",
+            "SELECT id, title, content, difficulty FROM custom_articles WHERE lang = ? ORDER BY id",
         )
+        .bind(lang)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| e.to_string())
@@ -6975,13 +7094,15 @@ impl Database for SqliteDatabase {
         title: &str,
         content: &str,
         difficulty: &str,
+        lang: &str,
     ) -> Result<Article, String> {
         let article = sqlx::query_as::<_, (i32, String, String, String)>(
-            "INSERT INTO custom_articles (title, content, difficulty) VALUES (?, ?, ?) RETURNING id, title, content, difficulty"
+            "INSERT INTO custom_articles (title, content, difficulty, lang) VALUES (?, ?, ?, ?) RETURNING id, title, content, difficulty"
         )
         .bind(title)
         .bind(content)
         .bind(difficulty)
+        .bind(lang)
         .fetch_one(&self.pool)
         .await
         .map_err(|e| e.to_string())
