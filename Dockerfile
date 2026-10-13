@@ -44,6 +44,8 @@ RUN apt-get update && \
     libssl3 \
     ca-certificates \
     curl \
+    sqlite3 \
+    redis-tools \
     && rm -rf /var/lib/apt/lists/*
 
 # AI 编程助手 CLI 工具：multica（AI agent 管理）与 pi（编程助手）
