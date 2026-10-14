@@ -38,6 +38,9 @@
             <a-tab-pane key="2" tab="汉字五笔查询">
               <WubiLookup />
             </a-tab-pane>
+            <a-tab-pane key="8" tab="数据库管理">
+              <DatabaseAdmin />
+            </a-tab-pane>
           </a-tabs>
         </a-layout-content>
         <a-layout-footer class="footer">
@@ -87,6 +90,7 @@ import PinyinTypingPractice from './PinyinTypingPractice.vue';
 import WubiRootKeyboard from './WubiRootKeyboard.vue';
 import JapaneseTypingPractice from './JapaneseTypingPractice.vue';
 import TraditionalChineseTypingPractice from './TraditionalChineseTypingPractice.vue';
+import DatabaseAdmin from './DatabaseAdmin.vue';
 
 const router = useRouter();
 const user = ref(null);

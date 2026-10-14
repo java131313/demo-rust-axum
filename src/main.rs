@@ -10,6 +10,7 @@ pub mod app;
 pub mod cache;
 pub mod config;
 pub mod db;
+pub mod db_admin;
 pub mod openapi;
 pub mod static_files;
 pub mod swagger;
@@ -43,6 +44,7 @@ async fn main() {
     println!("Database type: {}", config.get_db_type());
     println!("Server address: {}", config.server_address());
 
+    let mut sqlite_pool: Option<sqlx::SqlitePool> = None;
     let db: Arc<dyn crate::db::Database> = match config.get_db_type() {
         "mysql" => {
             let database_url = config.get_database_url();
@@ -83,6 +85,7 @@ async fn main() {
                 .await
                 .expect("failed to connect to SQLite database");
 
+            sqlite_pool = Some(pool.clone());
             let db = crate::db::SqliteDatabase::new(pool);
             db.init_db().await.expect("failed to initialize database");
             Arc::new(db)
@@ -137,7 +140,10 @@ async fn main() {
         }
     };
 
-    let state = crate::wubi::AppState { db };
+    let state = crate::wubi::AppState {
+        db,
+        sqlite: sqlite_pool,
+    };
 
     let app = crate::app::app(state)
         // Swagger UI：API文档页面 /swagger-ui/，规范JSON /api-docs/openapi.json

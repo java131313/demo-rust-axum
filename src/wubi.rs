@@ -22,6 +22,8 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub struct AppState {
     pub db: Arc<dyn Database>,
+    /// SQLite连接池：数据库管理(WS)功能需要；非SQLite部署为None
+    pub sqlite: Option<sqlx::SqlitePool>,
 }
 
 /// Wubi dictionary entry loaded from JSON file.

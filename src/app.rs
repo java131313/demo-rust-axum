@@ -73,6 +73,7 @@ pub fn app(state: AppState) -> axum::Router {
         .route("/api/login", post(login))
         .route("/api/logout", post(logout))
         .route("/api/register", post(register))
+        .route("/ws/dbadmin", get(crate::db_admin::ws_handler))
         .with_state(state)
 }
 
@@ -471,7 +472,10 @@ mod tests {
             .expect("failed to connect to in-memory SQLite");
         let db: std::sync::Arc<dyn crate::db::Database> =
             std::sync::Arc::new(crate::db::SqliteDatabase::new(pool));
-        app(AppState { db })
+        app(AppState {
+            db,
+            sqlite: None,
+        })
     }
 
     #[tokio::test]
