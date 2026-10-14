@@ -119,8 +119,8 @@
                   <input
                     v-if="editingCell && editingCell.r === i && editingCell.c === j"
                     ref="cellInput"
+                    v-model="editBuffer"
                     class="cell-editor"
-                    :value="editBuffer"
                     :placeholder="cell === null ? 'NULL' : ''"
                     @blur="commitEdit()"
                     @keyup.enter="commitEdit()"
@@ -322,8 +322,11 @@ export default {
       if (!this.editingCell) return;
       const { r, c } = this.editingCell;
       const col = this.resultInfo.columns[c];
-      if (!this.edits[r]) this.$set(this.edits, r, {});
-      this.$set(this.edits[r], col, this.editBuffer);
+      // Vue3无需$set：不可变方式替换，确保响应式更新
+      this.edits = {
+        ...this.edits,
+        [r]: { ...(this.edits[r] || {}), [col]: this.editBuffer },
+      };
       this.editingCell = null;
       this.editBuffer = '';
     },
@@ -344,7 +347,9 @@ export default {
       return !!this.edits[r] && Object.keys(this.edits[r]).length > 0;
     },
     revertRow(r) {
-      this.$delete(this.edits, r);
+      const rest = { ...this.edits };
+      delete rest[r];
+      this.edits = rest;
     },
     clearEdits() {
       this.edits = {};
