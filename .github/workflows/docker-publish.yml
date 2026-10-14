@@ -48,5 +48,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # 显式传入目标架构（与runner的linux/amd64平台一致），覆盖Dockerfile中的TARGETARCH ARG
+          build-args: |
+            TARGETARCH=amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
