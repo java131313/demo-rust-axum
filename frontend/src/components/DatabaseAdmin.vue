@@ -80,10 +80,14 @@
             <tbody>
               <tr v-for="(row, i) in resultInfo.rows" :key="i" :class="{ 'row-edited': isRowEdited(i) }">
                 <td v-if="mode === 'browse'" class="op-col">
-                  <template v-if="isRowEdited(i)">
-                    <a-button size="small" type="primary" :loading="savingRow === i" @click="saveRow(i)">保存</a-button>
-                    <a-button size="small" @click="revertRow(i)">还原</a-button>
-                  </template>
+                  <a-button
+                    size="small"
+                    type="primary"
+                    :ghost="!isRowEdited(i)"
+                    :loading="savingRow === i"
+                    @click="saveRow(i)"
+                  >保存</a-button>
+                  <a-button v-if="isRowEdited(i)" size="small" @click="revertRow(i)">还原</a-button>
                   <a-popconfirm title="确定删除这一行？" ok-text="删除" ok-type="danger" cancel-text="取消" @confirm="deleteRow(i)">
                     <a-button size="small" danger>删除</a-button>
                   </a-popconfirm>
@@ -307,7 +311,10 @@ export default {
     // ===== 行操作：保存/删除/新增 =====
     saveRow(r) {
       const sets = this.edits[r];
-      if (!sets || !Object.keys(sets).length) return;
+      if (!sets || !Object.keys(sets).length) {
+        this.$message?.info('该行没有修改需要保存，双击单元格可编辑');
+        return;
+      }
       this.savingRow = r;
       this.send({ action: 'update', table: this.currentTable, rowid: this.rowids[r], sets });
     },

@@ -264,7 +264,8 @@ async fn update_row(
 ) -> Value {
     let started = std::time::Instant::now();
     if sets.is_empty() {
-        return json!({"action": "update", "ok": false, "error": "没有需要更新的列"});
+        // 无修改的保存视为安全空操作（前端每行都有保存按钮）
+        return json!({"action": "update", "ok": true, "rows_affected": 0, "elapsed_ms": 0});
     }
     if !valid_ident(table) || sets.keys().any(|k| !valid_ident(k)) {
         return json!({"action": "update", "ok": false, "error": "非法的表名或列名"});
