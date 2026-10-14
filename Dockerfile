@@ -60,9 +60,12 @@ ARG MULTICA_INSTALL_URL=https://cdn.jsdelivr.net/gh/multica-ai/multica@main/scri
 RUN curl -fsSL "${MULTICA_INSTALL_URL}" | bash
 
 # Node.js（pi运行依赖>=22.19），按构建目标架构从镜像安装指定版本
+# TARGETARCH(Go命名amd64/arm64) → Node包命名(x64/arm64) 映射
 ARG TARGETARCH
 RUN set -eux; \
-    FILE="node-v${NODE_VERSION}-linux-${TARGETARCH}.tar.gz"; \
+    NODE_ARCH="$TARGETARCH"; \
+    if [ "$TARGETARCH" = "amd64" ]; then NODE_ARCH="x64"; fi; \
+    FILE="node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.gz"; \
     curl -fsSL "${NODE_DIST_URL}/v${NODE_VERSION}/${FILE}" -o /tmp/node.tar.gz; \
     tar -xzf /tmp/node.tar.gz -C /usr/local --strip-components=1; \
     rm /tmp/node.tar.gz; \
