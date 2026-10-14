@@ -5,7 +5,13 @@
       <span class="ws-dot" :class="wsStatus"></span>
       <span class="ws-text">{{ wsStatusText }}</span>
       <a-button size="small" @click="connect">重新连接</a-button>
-      <span class="db-hint">通过 WebSocket 管理 SQLite 数据库 · 执行任意 SQL</span>
+      <a-button
+        v-if="mode === 'browse'"
+        size="small"
+        type="primary"
+        @click="startAddRow"
+      >+ 新增一行</a-button>
+      <span class="db-hint">双击单元格可编辑 · 按行保存 · 执行任意 SQL</span>
     </div>
 
     <div class="db-body">
@@ -29,7 +35,7 @@
         </div>
       </div>
 
-      <!-- 右侧：SQL编辑区 + 结果网格 -->
+      <!-- 右侧：SQL编辑区 + 可编辑结果网格 -->
       <div class="db-main">
         <div class="sql-area">
           <a-textarea
@@ -66,23 +72,62 @@
           <table>
             <thead>
               <tr>
+                <th v-if="mode === 'browse'" class="op-col">操作</th>
                 <th v-for="c in resultInfo.columns" :key="c">{{ c }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(row, i) in resultInfo.rows" :key="i">
+              <tr v-for="(row, i) in resultInfo.rows" :key="i" :class="{ 'row-edited': isRowEdited(i) }">
+                <td v-if="mode === 'browse'" class="op-col">
+                  <template v-if="isRowEdited(i)">
+                    <a-button size="small" type="primary" :loading="savingRow === i" @click="saveRow(i)">保存</a-button>
+                    <a-button size="small" @click="revertRow(i)">还原</a-button>
+                  </template>
+                  <a-popconfirm title="确定删除这一行？" ok-text="删除" ok-type="danger" cancel-text="取消" @confirm="deleteRow(i)">
+                    <a-button size="small" danger>删除</a-button>
+                  </a-popconfirm>
+                </td>
                 <td
                   v-for="(cell, j) in row"
                   :key="j"
-                  :class="{ 'cell-null': cell === null }"
-                >{{ cell === null ? 'NULL' : cell }}</td>
+                  :class="{ 'cell-null': displayCell(i, j) === null && !isCellEdited(i, j), 'cell-modified': isCellEdited(i, j) }"
+                  :title="mode === 'browse' ? '双击编辑' : ''"
+                  @dblclick="mode === 'browse' && startEdit(i, j)"
+                >
+                  <input
+                    v-if="editingCell && editingCell.r === i && editingCell.c === j"
+                    ref="cellInput"
+                    class="cell-editor"
+                    :value="editBuffer"
+                    :placeholder="cell === null ? 'NULL' : ''"
+                    @blur="commitEdit()"
+                    @keyup.enter="commitEdit()"
+                    @keyup.esc="cancelEdit()"
+                  />
+                  <template v-else>{{ isCellEdited(i, j) ? edits[i][resultInfo.columns[j]] : (cell === null ? 'NULL' : cell) }}</template>
+                </td>
+              </tr>
+
+              <!-- 新增行 -->
+              <tr v-if="addingRow" class="row-adding">
+                <td class="op-col">
+                  <a-button size="small" type="primary" :loading="savingRow === -1" @click="saveNewRow()">保存</a-button>
+                  <a-button size="small" @click="cancelAddRow">取消</a-button>
+                </td>
+                <td v-for="(c, j) in resultInfo.columns" :key="j">
+                  <input
+                    class="cell-editor"
+                    v-model="addingRow.values[c]"
+                    :placeholder="'输入' + c"
+                  />
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
 
         <div v-else-if="!errorMsg" class="empty-tip">
-          <template v-if="wsStatus === 'connected'">从左侧选择数据表浏览数据，或在上方输入 SQL 执行</template>
+          <template v-if="wsStatus === 'connected'">从左侧选择数据表浏览并编辑数据，或在上方输入 SQL 执行</template>
           <template v-else>WebSocket 未连接，点击"重新连接"</template>
         </div>
       </div>
@@ -96,16 +141,22 @@ export default {
   data() {
     return {
       ws: null,
-      wsStatus: 'disconnected', // disconnected / connecting / connected / error
+      wsStatus: 'disconnected',
       tables: [],
       currentTable: '',
-      mode: 'query', // browse=浏览表数据, query=自定义SQL
+      mode: 'query',
       sql: '',
       running: false,
+      savingRow: null, // 正在保存的行号，-1表示新增行
       errorMsg: '',
       resultInfo: null,
+      rowids: [],
       pageSize: 100,
       offset: 0,
+      edits: {}, // {行号: {列名: 新值}}
+      editingCell: null, // {r, c}
+      editBuffer: '',
+      addingRow: null, // {values: {列名: 值}}
     };
   },
   computed: {
@@ -172,7 +223,12 @@ export default {
       this.currentTable = name;
       this.mode = 'browse';
       this.offset = 0;
+      this.clearEdits();
       this.send({ action: 'rows', table: name, limit: this.pageSize, offset: 0 });
+    },
+    reloadBrowse() {
+      this.clearEdits();
+      this.send({ action: 'rows', table: this.currentTable, limit: this.pageSize, offset: this.offset });
     },
     loadSchema() {
       if (!this.currentTable) return;
@@ -183,16 +239,94 @@ export default {
       if (!sql) return;
       this.running = true;
       this.mode = 'query';
+      this.clearEdits();
       this.send({ action: 'query', sql });
     },
     nextPage() {
       this.offset += this.pageSize;
-      this.send({ action: 'rows', table: this.currentTable, limit: this.pageSize, offset: this.offset });
+      this.reloadBrowse();
     },
     prevPage() {
       this.offset = Math.max(0, this.offset - this.pageSize);
-      this.send({ action: 'rows', table: this.currentTable, limit: this.pageSize, offset: this.offset });
+      this.reloadBrowse();
     },
+
+    // ===== 单元格编辑 =====
+    startEdit(r, c) {
+      this.editingCell = { r, c };
+      const col = this.resultInfo.columns[c];
+      const current = this.edits[r] && col in this.edits[r]
+        ? this.edits[r][col]
+        : this.resultInfo.rows[r][c];
+      this.editBuffer = current === null ? '' : String(current);
+      this.$nextTick(() => {
+        const input = this.$refs.cellInput;
+        if (input && input.focus) input.focus();
+      });
+    },
+    commitEdit() {
+      if (!this.editingCell) return;
+      const { r, c } = this.editingCell;
+      const col = this.resultInfo.columns[c];
+      if (!this.edits[r]) this.$set(this.edits, r, {});
+      this.$set(this.edits[r], col, this.editBuffer);
+      this.editingCell = null;
+      this.editBuffer = '';
+    },
+    cancelEdit() {
+      this.editingCell = null;
+      this.editBuffer = '';
+    },
+    isCellEdited(r, c) {
+      const col = this.resultInfo.columns[c];
+      return !!(this.edits[r] && col in this.edits[r]);
+    },
+    displayCell(r, c) {
+      const col = this.resultInfo.columns[c];
+      if (this.edits[r] && col in this.edits[r]) return this.edits[r][col];
+      return this.resultInfo.rows[r][c];
+    },
+    isRowEdited(r) {
+      return !!this.edits[r] && Object.keys(this.edits[r]).length > 0;
+    },
+    revertRow(r) {
+      this.$delete(this.edits, r);
+    },
+    clearEdits() {
+      this.edits = {};
+      this.editingCell = null;
+      this.addingRow = null;
+    },
+
+    // ===== 行操作：保存/删除/新增 =====
+    saveRow(r) {
+      const sets = this.edits[r];
+      if (!sets || !Object.keys(sets).length) return;
+      this.savingRow = r;
+      this.send({ action: 'update', table: this.currentTable, rowid: this.rowids[r], sets });
+    },
+    deleteRow(r) {
+      this.savingRow = r;
+      this.send({ action: 'delete', table: this.currentTable, rowid: this.rowids[r] });
+    },
+    startAddRow() {
+      const values = {};
+      this.resultInfo.columns.forEach(c => { values[c] = ''; });
+      this.addingRow = { values };
+    },
+    cancelAddRow() {
+      this.addingRow = null;
+    },
+    saveNewRow() {
+      if (!this.addingRow) return;
+      const values = {};
+      Object.entries(this.addingRow.values).forEach(([k, v]) => {
+        values[k] = v === '' ? null : v;
+      });
+      this.savingRow = -1;
+      this.send({ action: 'insert', table: this.currentTable, values });
+    },
+
     onMessage(raw) {
       this.running = false;
       let msg;
@@ -203,6 +337,7 @@ export default {
       }
       if (!msg.ok) {
         this.errorMsg = msg.error || '未知错误';
+        this.savingRow = null;
         return;
       }
       this.errorMsg = '';
@@ -212,9 +347,27 @@ export default {
           break;
         case 'rows':
           this.resultInfo = msg;
+          this.rowids = msg.rowids || [];
+          this.clearEdits();
           break;
         case 'query':
           this.resultInfo = msg;
+          this.rowids = [];
+          break;
+        case 'update':
+          this.savingRow = null;
+          this.$message?.success(`已更新 ${msg.rows_affected} 行`);
+          this.reloadBrowse();
+          break;
+        case 'delete':
+          this.savingRow = null;
+          this.$message?.success(`已删除 ${msg.rows_affected} 行`);
+          this.reloadBrowse();
+          break;
+        case 'insert':
+          this.savingRow = null;
+          this.$message?.success('已新增一行');
+          this.reloadBrowse();
           break;
         case 'schema':
           if (msg.sql) {
@@ -351,7 +504,7 @@ export default {
 
 .result-grid th, .result-grid td {
   border: 1px solid #f0f0f0;
-  padding: 5px 10px;
+  padding: 4px 8px;
   text-align: left;
   white-space: nowrap;
   max-width: 320px;
@@ -365,11 +518,37 @@ export default {
   top: 0;
   font-family: monospace;
   color: #1677ff;
+  z-index: 1;
 }
 
 .result-grid tbody tr:nth-child(even) { background: #fcfcfc; }
 .result-grid tbody tr:hover { background: #f0f5ff; }
+.row-edited { background: #fffbe6 !important; }
+.row-adding { background: #f6ffed !important; }
 .cell-null { color: #c41d7f; font-style: italic; }
+.cell-modified { outline: 2px solid #faad14; outline-offset: -2px; }
+
+.op-col {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  white-space: nowrap;
+  min-width: 130px;
+}
+.result-grid th.op-col { z-index: 2; }
+.op-col .ant-btn { margin-right: 4px; }
+
+.cell-editor {
+  width: 100%;
+  min-width: 120px;
+  border: 1px solid #1677ff;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 13px;
+  font-family: monospace;
+  outline: none;
+  box-sizing: border-box;
+}
 
 .empty-tip {
   flex: 1;

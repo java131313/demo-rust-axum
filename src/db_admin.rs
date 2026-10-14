@@ -40,6 +40,19 @@ enum ClientMsg {
         #[serde(default)]
         offset: i64,
     },
+    /// 更新一行: 按rowid定位, sets为列名->新值(null表示SQL NULL)
+    Update {
+        table: String,
+        rowid: i64,
+        sets: std::collections::HashMap<String, Value>,
+    },
+    /// 新增一行: values为列名->值
+    Insert {
+        table: String,
+        values: std::collections::HashMap<String, Value>,
+    },
+    /// 删除一行: 按rowid定位
+    Delete { table: String, rowid: i64 },
 }
 
 fn default_limit() -> i64 {
@@ -105,6 +118,9 @@ async fn process(pool: &SqlitePool, cmd: ClientMsg) -> Value {
             limit,
             offset,
         } => browse_table(pool, &table, limit, offset).await,
+        ClientMsg::Update { table, rowid, sets } => update_row(pool, &table, rowid, sets).await,
+        ClientMsg::Insert { table, values } => insert_row(pool, &table, values).await,
+        ClientMsg::Delete { table, rowid } => delete_row(pool, &table, rowid).await,
     }
 }
 
@@ -147,22 +163,146 @@ async fn table_schema(pool: &SqlitePool, table: &str) -> Value {
 async fn browse_table(pool: &SqlitePool, table: &str, limit: i64, offset: i64) -> Value {
     let started = std::time::Instant::now();
     let escaped = table.replace('"', "\"\"");
-    let sql = format!("SELECT * FROM \"{}\" LIMIT ? OFFSET ?", escaped);
+    // 附带隐藏的rowid用于行编辑/删除定位（每个SQLite行都有，除非WITHOUT ROWID表）
+    let sql = format!("SELECT rowid AS __rowid__, * FROM \"{}\" LIMIT ? OFFSET ?", escaped);
     match sqlx::query(&sql).bind(limit).bind(offset).fetch_all(pool).await {
         Ok(rows) => {
-            let (columns, data) = rows_to_json(&rows);
+            let (raw_columns, data) = rows_to_json(&rows);
+            // 第一列是__rowid__，从展示列中剥离，单独作为rowids数组返回
+            let rowids: Vec<Value> = data
+                .iter()
+                .map(|r| r.first().cloned().unwrap_or(Value::Null))
+                .collect();
+            let columns: Vec<String> = raw_columns.into_iter().skip(1).collect();
+            let rows: Vec<Vec<Value>> = data.into_iter().map(|r| r.into_iter().skip(1).collect()).collect();
             json!({
                 "action": "rows",
                 "ok": true,
                 "table": table,
                 "columns": columns,
-                "rows": data,
+                "rows": rows,
+                "rowids": rowids,
                 "limit": limit,
                 "offset": offset,
                 "elapsed_ms": started.elapsed().as_millis(),
             })
         }
         Err(e) => json!({"action": "rows", "ok": false, "error": e.to_string()}),
+    }
+}
+
+/// 校验列名合法性（字母数字下划线），防止注入
+fn valid_ident(name: &str) -> bool {
+    !name.is_empty()
+        && name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_')
+}
+
+fn bind_json<'q>(
+    q: sqlx::query::Query<'q, Sqlite, sqlx::sqlite::SqliteArguments<'q>>,
+    v: &'q Value,
+) -> sqlx::query::Query<'q, Sqlite, sqlx::sqlite::SqliteArguments<'q>> {
+    match v {
+        Value::Null => q.bind(Option::<String>::None),
+        Value::Bool(b) => q.bind(*b as i64),
+        Value::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                q.bind(i)
+            } else {
+                q.bind(n.as_f64().unwrap_or(0.0))
+            }
+        }
+        Value::String(s) => q.bind(s.clone()),
+        // 数组/对象不作为单元格值写入，退化为JSON文本
+        other => q.bind(other.to_string()),
+    }
+}
+
+async fn update_row(
+    pool: &SqlitePool,
+    table: &str,
+    rowid: i64,
+    sets: std::collections::HashMap<String, Value>,
+) -> Value {
+    let started = std::time::Instant::now();
+    if sets.is_empty() {
+        return json!({"action": "update", "ok": false, "error": "没有需要更新的列"});
+    }
+    if !valid_ident(table) || sets.keys().any(|k| !valid_ident(k)) {
+        return json!({"action": "update", "ok": false, "error": "非法的表名或列名"});
+    }
+    let assignments: Vec<String> = sets.keys().map(|k| format!("\"{}\" = ?", k)).collect();
+    let sql = format!(
+        "UPDATE \"{}\" SET {} WHERE rowid = ?",
+        table,
+        assignments.join(", ")
+    );
+    let mut q = sqlx::query(&sql);
+    for v in sets.values() {
+        q = bind_json(q, v);
+    }
+    q = q.bind(rowid);
+    match q.execute(pool).await {
+        Ok(res) => json!({
+            "action": "update",
+            "ok": true,
+            "rows_affected": res.rows_affected(),
+            "elapsed_ms": started.elapsed().as_millis(),
+        }),
+        Err(e) => json!({"action": "update", "ok": false, "error": e.to_string()}),
+    }
+}
+
+async fn insert_row(
+    pool: &SqlitePool,
+    table: &str,
+    values: std::collections::HashMap<String, Value>,
+) -> Value {
+    let started = std::time::Instant::now();
+    if values.is_empty() {
+        return json!({"action": "insert", "ok": false, "error": "没有要插入的列"});
+    }
+    if !valid_ident(table) || values.keys().any(|k| !valid_ident(k)) {
+        return json!({"action": "insert", "ok": false, "error": "非法的表名或列名"});
+    }
+    let cols: Vec<String> = values.keys().map(|k| format!("\"{}\"", k)).collect();
+    let marks: Vec<&str> = values.keys().map(|_| "?").collect();
+    let sql = format!(
+        "INSERT INTO \"{}\" ({}) VALUES ({})",
+        table,
+        cols.join(", "),
+        marks.join(", ")
+    );
+    let mut q = sqlx::query(&sql);
+    for v in values.values() {
+        q = bind_json(q, v);
+    }
+    match q.execute(pool).await {
+        Ok(res) => json!({
+            "action": "insert",
+            "ok": true,
+            "rows_affected": res.rows_affected(),
+            "elapsed_ms": started.elapsed().as_millis(),
+        }),
+        Err(e) => json!({"action": "insert", "ok": false, "error": e.to_string()}),
+    }
+}
+
+async fn delete_row(pool: &SqlitePool, table: &str, rowid: i64) -> Value {
+    let started = std::time::Instant::now();
+    if !valid_ident(table) {
+        return json!({"action": "delete", "ok": false, "error": "非法的表名"});
+    }
+    let sql = format!("DELETE FROM \"{}\" WHERE rowid = ?", table);
+    match sqlx::query(&sql).bind(rowid).execute(pool).await {
+        Ok(res) => json!({
+            "action": "delete",
+            "ok": true,
+            "rows_affected": res.rows_affected(),
+            "elapsed_ms": started.elapsed().as_millis(),
+        }),
+        Err(e) => json!({"action": "delete", "ok": false, "error": e.to_string()}),
     }
 }
 
