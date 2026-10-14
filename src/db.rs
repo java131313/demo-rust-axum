@@ -6834,6 +6834,24 @@ impl Database for SqliteDatabase {
         .await
         .map_err(|e| e.to_string())?;
 
+        // 数据库管理审计日志：记录每次行修改操作（谁/何时/哪表哪行/内容）
+        sqlx::query(
+            r#"
+            CREATE TABLE IF NOT EXISTS admin_audit_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username VARCHAR(64) NOT NULL DEFAULT '',
+                action VARCHAR(16) NOT NULL,
+                table_name VARCHAR(128) NOT NULL,
+                rowid INTEGER,
+                detail TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            "#,
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
         let liaozhai_seeded: Option<String> =
             sqlx::query_scalar("SELECT key FROM seed_meta WHERE key = 'liaozhai'")
                 .fetch_optional(&self.pool)

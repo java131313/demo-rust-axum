@@ -11,6 +11,7 @@
         type="primary"
         @click="startAddRow"
       >+ 新增一行</a-button>
+      <a-button size="small" @click="showAuditLog">修改记录</a-button>
       <span class="db-hint">双击单元格可编辑 · 按行保存 · 执行任意 SQL</span>
     </div>
 
@@ -233,6 +234,11 @@ export default {
     loadSchema() {
       if (!this.currentTable) return;
       this.send({ action: 'schema', table: this.currentTable });
+    },
+    showAuditLog() {
+      this.mode = 'query';
+      this.sql = 'SELECT * FROM admin_audit_log ORDER BY id DESC LIMIT 100';
+      this.runSql();
     },
     runSql() {
       const sql = this.sql.trim();

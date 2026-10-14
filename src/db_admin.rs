@@ -65,18 +65,18 @@ pub async fn ws_handler(
     State(state): State<AppState>,
     Query(q): Query<WsQuery>,
 ) -> impl IntoResponse {
-    let token_ok = q
+    let claims = q
         .token
         .as_deref()
-        .map(|t| crate::wubi::validate_token(t).is_ok())
-        .unwrap_or(false);
-    if !token_ok {
-        return (StatusCode::UNAUTHORIZED, "无效或过期的登录令牌").into_response();
-    }
+        .and_then(|t| crate::wubi::validate_token(t).ok());
+    let claims = match claims {
+        Some(c) => c,
+        None => return (StatusCode::UNAUTHORIZED, "无效或过期的登录令牌").into_response(),
+    };
     match &state.sqlite {
         Some(pool) => {
             let pool = pool.clone();
-            ws.on_upgrade(move |socket| handle_socket(socket, pool))
+            ws.on_upgrade(move |socket| handle_socket(socket, pool, claims.sub))
         }
         None => (
             StatusCode::BAD_REQUEST,
@@ -86,7 +86,7 @@ pub async fn ws_handler(
     }
 }
 
-async fn handle_socket(mut socket: WebSocket, pool: SqlitePool) {
+async fn handle_socket(mut socket: WebSocket, pool: SqlitePool, user_id: String) {
     while let Some(msg) = socket.recv().await {
         let msg = match msg {
             Ok(m) => m,
@@ -94,7 +94,7 @@ async fn handle_socket(mut socket: WebSocket, pool: SqlitePool) {
         };
         if let Message::Text(text) = msg {
             let reply = match serde_json::from_str::<ClientMsg>(&text) {
-                Ok(cmd) => process(&pool, cmd).await,
+                Ok(cmd) => process(&pool, cmd, &user_id).await,
                 Err(e) => json!({"ok": false, "error": format!("消息格式错误: {}", e)}),
             };
             if socket
@@ -108,7 +108,7 @@ async fn handle_socket(mut socket: WebSocket, pool: SqlitePool) {
     }
 }
 
-async fn process(pool: &SqlitePool, cmd: ClientMsg) -> Value {
+async fn process(pool: &SqlitePool, cmd: ClientMsg, user_id: &str) -> Value {
     match cmd {
         ClientMsg::Tables => list_tables(pool).await,
         ClientMsg::Schema { table } => table_schema(pool, &table).await,
@@ -118,10 +118,46 @@ async fn process(pool: &SqlitePool, cmd: ClientMsg) -> Value {
             limit,
             offset,
         } => browse_table(pool, &table, limit, offset).await,
-        ClientMsg::Update { table, rowid, sets } => update_row(pool, &table, rowid, sets).await,
-        ClientMsg::Insert { table, values } => insert_row(pool, &table, values).await,
-        ClientMsg::Delete { table, rowid } => delete_row(pool, &table, rowid).await,
+        ClientMsg::Update { table, rowid, sets } => update_row(pool, &table, rowid, sets, user_id).await,
+        ClientMsg::Insert { table, values } => insert_row(pool, &table, values, user_id).await,
+        ClientMsg::Delete { table, rowid } => delete_row(pool, &table, rowid, user_id).await,
     }
+}
+
+/// 将一次修改操作写入审计日志（尽力而为，失败仅告警）
+async fn audit(
+    pool: &SqlitePool,
+    user_id: &str,
+    action: &str,
+    table: &str,
+    rowid: Option<i64>,
+    detail: Value,
+) {
+    // 尽力解析用户名，失败则记录user_id
+    let username = match user_id.parse::<i32>() {
+        Ok(id) => {
+            match sqlx::query_as::<_, (String,)>("SELECT username FROM users WHERE id = ?")
+                .bind(id)
+                .fetch_optional(pool)
+                .await
+            {
+                Ok(Some((u,))) => u,
+                _ => user_id.to_string(),
+            }
+        }
+        Err(_) => user_id.to_string(),
+    };
+
+    let _ = sqlx::query(
+        "INSERT INTO admin_audit_log (username, action, table_name, rowid, detail) VALUES (?, ?, ?, ?, ?)",
+    )
+    .bind(&username)
+    .bind(action)
+    .bind(table)
+    .bind(rowid)
+    .bind(detail.to_string())
+    .execute(pool)
+    .await;
 }
 
 async fn list_tables(pool: &SqlitePool) -> Value {
@@ -224,6 +260,7 @@ async fn update_row(
     table: &str,
     rowid: i64,
     sets: std::collections::HashMap<String, Value>,
+    user_id: &str,
 ) -> Value {
     let started = std::time::Instant::now();
     if sets.is_empty() {
@@ -244,12 +281,23 @@ async fn update_row(
     }
     q = q.bind(rowid);
     match q.execute(pool).await {
-        Ok(res) => json!({
-            "action": "update",
-            "ok": true,
-            "rows_affected": res.rows_affected(),
-            "elapsed_ms": started.elapsed().as_millis(),
-        }),
+        Ok(res) => {
+            audit(
+                pool,
+                user_id,
+                "update",
+                table,
+                Some(rowid),
+                json!({"sets": sets}),
+            )
+            .await;
+            json!({
+                "action": "update",
+                "ok": true,
+                "rows_affected": res.rows_affected(),
+                "elapsed_ms": started.elapsed().as_millis(),
+            })
+        }
         Err(e) => json!({"action": "update", "ok": false, "error": e.to_string()}),
     }
 }
@@ -258,6 +306,7 @@ async fn insert_row(
     pool: &SqlitePool,
     table: &str,
     values: std::collections::HashMap<String, Value>,
+    user_id: &str,
 ) -> Value {
     let started = std::time::Instant::now();
     if values.is_empty() {
@@ -279,29 +328,43 @@ async fn insert_row(
         q = bind_json(q, v);
     }
     match q.execute(pool).await {
-        Ok(res) => json!({
-            "action": "insert",
-            "ok": true,
-            "rows_affected": res.rows_affected(),
-            "elapsed_ms": started.elapsed().as_millis(),
-        }),
+        Ok(res) => {
+            audit(
+                pool,
+                user_id,
+                "insert",
+                table,
+                None,
+                json!({"values": values}),
+            )
+            .await;
+            json!({
+                "action": "insert",
+                "ok": true,
+                "rows_affected": res.rows_affected(),
+                "elapsed_ms": started.elapsed().as_millis(),
+            })
+        }
         Err(e) => json!({"action": "insert", "ok": false, "error": e.to_string()}),
     }
 }
 
-async fn delete_row(pool: &SqlitePool, table: &str, rowid: i64) -> Value {
+async fn delete_row(pool: &SqlitePool, table: &str, rowid: i64, user_id: &str) -> Value {
     let started = std::time::Instant::now();
     if !valid_ident(table) {
         return json!({"action": "delete", "ok": false, "error": "非法的表名"});
     }
     let sql = format!("DELETE FROM \"{}\" WHERE rowid = ?", table);
     match sqlx::query(&sql).bind(rowid).execute(pool).await {
-        Ok(res) => json!({
-            "action": "delete",
-            "ok": true,
-            "rows_affected": res.rows_affected(),
-            "elapsed_ms": started.elapsed().as_millis(),
-        }),
+        Ok(res) => {
+            audit(pool, user_id, "delete", table, Some(rowid), json!({})).await;
+            json!({
+                "action": "delete",
+                "ok": true,
+                "rows_affected": res.rows_affected(),
+                "elapsed_ms": started.elapsed().as_millis(),
+            })
+        }
         Err(e) => json!({"action": "delete", "ok": false, "error": e.to_string()}),
     }
 }
