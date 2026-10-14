@@ -11,8 +11,15 @@
         type="primary"
         @click="startAddRow"
       >+ 新增一行</a-button>
+      <a-button
+        v-if="editCount > 0"
+        size="small"
+        type="primary"
+        :loading="savingBatch"
+        @click="batchSave"
+      >保存全部改动 ({{ editCount }})</a-button>
       <a-button size="small" @click="showAuditLog">修改记录</a-button>
-      <span class="db-hint">双击单元格可编辑 · 按行保存 · 执行任意 SQL</span>
+      <span class="db-hint">双击单元格可编辑 · 改动可逐个保存或一键全部保存</span>
     </div>
 
     <div class="db-body">
@@ -47,6 +54,16 @@
             @keyup.ctrl.enter="runSql"
           />
           <div class="sql-actions">
+            <a-dropdown>
+              <a-button size="small">SQL模板 ▾</a-button>
+              <template #overlay>
+                <a-menu>
+                  <a-menu-item v-for="(t, i) in sqlTemplates" :key="i" @click="applyTemplate(t.sql)">
+                    {{ t.label }}
+                  </a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
             <a-button type="primary" :loading="running" @click="runSql">执行</a-button>
             <a-button v-if="mode === 'browse'" size="small" @click="loadSchema">查看建表语句</a-button>
           </div>
@@ -162,6 +179,10 @@ export default {
       editingCell: null, // {r, c}
       editBuffer: '',
       addingRow: null, // {values: {列名: 值}}
+      savingBatch: false,
+      batchQueue: [],
+      batchTotal: 0,
+      batchFailed: 0,
     };
   },
   computed: {
@@ -172,6 +193,25 @@ export default {
         connected: '已连接',
         error: '连接失败',
       }[this.wsStatus];
+    },
+    editCount() {
+      return Object.values(this.edits).filter(e => e && Object.keys(e).length > 0).length;
+    },
+    // SQL模板：优先使用当前浏览的表名和列名
+    sqlTemplates() {
+      const t = this.currentTable || 'table_name';
+      const cols = this.mode === 'browse' && this.resultInfo ? this.resultInfo.columns : [];
+      const insertCols = cols.length ? cols.map(c => `"${c}"`).join(', ') : 'col1, col2';
+      const insertVals = cols.length ? cols.map(() => "''").join(', ') : "'值1', '值2'";
+      return [
+        { label: 'SELECT 查询', sql: `SELECT * FROM "${t}" LIMIT 100` },
+        { label: 'INSERT 插入', sql: `INSERT INTO "${t}" (${insertCols}) VALUES (${insertVals})` },
+        { label: 'UPDATE 更新', sql: `UPDATE "${t}" SET 列名 = '新值' WHERE id = 1` },
+        { label: 'DELETE 删除', sql: `DELETE FROM "${t}" WHERE id = 1` },
+        { label: '表结构 DDL', sql: `SELECT sql FROM sqlite_master WHERE name = '${t}'` },
+        { label: '全部索引', sql: `SELECT name, tbl_name, sql FROM sqlite_master WHERE type = 'index'` },
+        { label: '清空表', sql: `DELETE FROM "${t}"` },
+      ];
     },
   },
   mounted() {
@@ -238,6 +278,10 @@ export default {
     loadSchema() {
       if (!this.currentTable) return;
       this.send({ action: 'schema', table: this.currentTable });
+    },
+    applyTemplate(sql) {
+      this.sql = sql;
+      this.$message?.info('模板已填入编辑器，修改后点执行');
     },
     showAuditLog() {
       this.mode = 'query';
@@ -318,6 +362,37 @@ export default {
       this.savingRow = r;
       this.send({ action: 'update', table: this.currentTable, rowid: this.rowids[r], sets });
     },
+    // ===== 批量保存：一键执行全部待保存的行修改 =====
+    batchSave() {
+      const rows = Object.keys(this.edits)
+        .map(Number)
+        .filter(r => this.edits[r] && Object.keys(this.edits[r]).length > 0)
+        .sort((a, b) => a - b);
+      if (!rows.length) {
+        this.$message?.info('没有待保存的修改');
+        return;
+      }
+      this.batchQueue = rows;
+      this.batchTotal = rows.length;
+      this.batchFailed = 0;
+      this.savingBatch = true;
+      this.sendNextBatch();
+    },
+    sendNextBatch() {
+      if (!this.batchQueue.length) {
+        this.savingBatch = false;
+        const okCount = this.batchTotal - this.batchFailed;
+        if (this.batchFailed > 0) {
+          this.$message?.warning(`批量保存完成：成功 ${okCount} 行，失败 ${this.batchFailed} 行`);
+        } else {
+          this.$message?.success(`已保存全部 ${this.batchTotal} 行修改`);
+        }
+        this.reloadBrowse();
+        return;
+      }
+      const r = this.batchQueue.shift();
+      this.send({ action: 'update', table: this.currentTable, rowid: this.rowids[r], sets: this.edits[r] });
+    },
     deleteRow(r) {
       this.savingRow = r;
       this.send({ action: 'delete', table: this.currentTable, rowid: this.rowids[r] });
@@ -349,6 +424,13 @@ export default {
         return;
       }
       if (!msg.ok) {
+        if (this.savingBatch) {
+          // 批量保存进行中：某行失败不中断，继续下一行
+          this.batchFailed += 1;
+          this.errorMsg = msg.error || '未知错误';
+          this.sendNextBatch();
+          return;
+        }
         this.errorMsg = msg.error || '未知错误';
         this.savingRow = null;
         return;
@@ -368,9 +450,13 @@ export default {
           this.rowids = [];
           break;
         case 'update':
-          this.savingRow = null;
-          this.$message?.success(`已更新 ${msg.rows_affected} 行`);
-          this.reloadBrowse();
+          if (this.savingBatch) {
+            this.sendNextBatch();
+          } else {
+            this.savingRow = null;
+            this.$message?.success(`已更新 ${msg.rows_affected} 行`);
+            this.reloadBrowse();
+          }
           break;
         case 'delete':
           this.savingRow = null;
