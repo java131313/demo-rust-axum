@@ -12,6 +12,7 @@ pub mod config;
 pub mod db;
 pub mod db_admin;
 pub mod openapi;
+pub mod redis_admin;
 pub mod static_files;
 pub mod swagger;
 pub mod wubi;
@@ -45,6 +46,7 @@ async fn main() {
     println!("Server address: {}", config.server_address());
 
     let mut sqlite_pool: Option<sqlx::SqlitePool> = None;
+    let mut redis_conn: Option<redis::aio::ConnectionManager> = None;
     let db: Arc<dyn crate::db::Database> = match config.get_db_type() {
         "mysql" => {
             let database_url = config.get_database_url();
@@ -116,7 +118,11 @@ async fn main() {
         Ok(redis_client) => match redis::aio::ConnectionManager::new(redis_client).await {
             Ok(conn_manager) => {
                 println!("Redis cache connected: {}", sanitize_url(&redis_url));
-                let cached = Arc::new(crate::cache::CachedDatabase::new(db, conn_manager));
+                let cached = Arc::new(crate::cache::CachedDatabase::new(
+                    db,
+                    conn_manager.clone(),
+                ));
+                redis_conn = Some(conn_manager);
                 // 后台预热文章类缓存，避免首个前端请求穿透到数据库
                 {
                     let warmer = cached.clone();
@@ -143,6 +149,7 @@ async fn main() {
     let state = crate::wubi::AppState {
         db,
         sqlite: sqlite_pool,
+        redis: redis_conn,
     };
 
     let app = crate::app::app(state)

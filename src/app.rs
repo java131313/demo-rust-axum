@@ -74,6 +74,7 @@ pub fn app(state: AppState) -> axum::Router {
         .route("/api/logout", post(logout))
         .route("/api/register", post(register))
         .route("/ws/dbadmin", get(crate::db_admin::ws_handler))
+        .route("/ws/redisadmin", get(crate::redis_admin::ws_handler))
         .with_state(state)
 }
 
@@ -475,6 +476,7 @@ mod tests {
         app(AppState {
             db,
             sqlite: None,
+            redis: None,
         })
     }
 

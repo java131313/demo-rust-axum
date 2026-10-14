@@ -24,6 +24,8 @@ pub struct AppState {
     pub db: Arc<dyn Database>,
     /// SQLite连接池：数据库管理(WS)功能需要；非SQLite部署为None
     pub sqlite: Option<sqlx::SqlitePool>,
+    /// Redis连接：缓存管理(WS)功能需要；未启用缓存时为None
+    pub redis: Option<redis::aio::ConnectionManager>,
 }
 
 /// Wubi dictionary entry loaded from JSON file.

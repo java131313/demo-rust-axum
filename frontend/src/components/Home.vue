@@ -41,6 +41,9 @@
             <a-tab-pane key="8" tab="数据库管理">
               <DatabaseAdmin />
             </a-tab-pane>
+            <a-tab-pane key="9" tab="Redis管理">
+              <RedisAdmin />
+            </a-tab-pane>
           </a-tabs>
         </a-layout-content>
         <a-layout-footer class="footer">
@@ -91,6 +94,7 @@ import WubiRootKeyboard from './WubiRootKeyboard.vue';
 import JapaneseTypingPractice from './JapaneseTypingPractice.vue';
 import TraditionalChineseTypingPractice from './TraditionalChineseTypingPractice.vue';
 import DatabaseAdmin from './DatabaseAdmin.vue';
+import RedisAdmin from './RedisAdmin.vue';
 
 const router = useRouter();
 const user = ref(null);
