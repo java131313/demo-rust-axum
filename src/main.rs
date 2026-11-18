@@ -47,7 +47,8 @@ async fn main() {
 
     let mut sqlite_pool: Option<sqlx::SqlitePool> = None;
     let mut redis_conn: Option<redis::aio::ConnectionManager> = None;
-    let db: Arc<dyn crate::db::Database> = match config.get_db_type() {
+    let db_type = config.get_db_type();
+    let db: Arc<dyn crate::db::Database> = match db_type.as_str() {
         "mysql" => {
             let database_url = config.get_database_url();
             let pool = sqlx::mysql::MySqlPool::connect(&database_url)
@@ -59,7 +60,9 @@ async fn main() {
             Arc::new(db)
         }
         "postgres" | "postgresql" => {
-            let database_url = config.get_database_url();
+            // DATABASE_URL环境变量优先（Render等平台注入的PostgreSQL连接串）
+            let database_url = std::env::var("DATABASE_URL")
+                .unwrap_or_else(|_| config.get_database_url());
             println!("PostgreSQL URL: {}", database_url);
             let pool = sqlx::postgres::PgPool::connect(&database_url)
                 .await

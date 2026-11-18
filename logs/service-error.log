@@ -926,3 +926,23 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 thread 'main' (106293) panicked at src/main.rs:70:18:
 failed to connect to PostgreSQL database: Database(PgDatabaseError { severity: Fatal, code: "28000", message: "role \"root\" does not exist", detail: None, hint: None, position: None, where: None, schema: None, table: None, column: None, data_type: None, constraint: None, file: Some("miscinit.c"), line: Some(770), routine: Some("InitializeSessionUserId") })
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache
+WARNING: Redis connection failed (Connection refused (os error 61)), running WITHOUT cache

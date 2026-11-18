@@ -1,0 +1,20 @@
+# Render Blueprint：前后端一体化Web服务（使用已有的Render PostgreSQL实例）
+# 部署方式：Render Dashboard → New → Blueprint → 选择本仓库
+# 说明：前端已编译嵌入Rust二进制，单容器同时提供页面/API/Swagger，无需分开部署
+# 注意：DATABASE_URL 请在你现有的Render PG实例上查看并添加到本服务的
+#       Environment → Add Environment Variable（勿将连接串提交进仓库）
+services:
+  - type: web
+    name: wubi-typing
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    # 构建自仓库根目录Dockerfile（多阶段：前端构建→Rust编译→工具链运行时）
+    envVars:
+      - key: DB_TYPE
+        value: postgres
+      - key: JWT_SECRET
+        generateValue: true
+      - key: HOST
+        value: 0.0.0.0
+      # 可选：接入现有Redis Cloud缓存（添加REDIS_URL后缓存功能生效）

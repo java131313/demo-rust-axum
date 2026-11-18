@@ -137,14 +137,16 @@ impl AppConfig {
         }
     }
 
-    /// 获取数据库类型
-    pub fn get_db_type(&self) -> &str {
-        &self.database.db_type
+    /// 获取数据库类型（可用DB_TYPE环境变量覆盖，便于容器部署）
+    pub fn get_db_type(&self) -> String {
+        std::env::var("DB_TYPE").unwrap_or_else(|_| self.database.db_type.clone())
     }
 
-    /// 获取服务器地址
+    /// 获取服务器地址（HOST/PORT环境变量优先，Render等平台注入PORT）
     pub fn server_address(&self) -> String {
-        format!("{}:{}", self.server.host, self.server.port)
+        let host = std::env::var("HOST").unwrap_or_else(|_| self.server.host.clone());
+        let port = std::env::var("PORT").unwrap_or_else(|_| self.server.port.to_string());
+        format!("{}:{}", host, port)
     }
 }
 
