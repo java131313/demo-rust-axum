@@ -1,0 +1,5 @@
+# Cloudflare Worker 移植版构建产物
+target/
+build/
+.wrangler/
+node_modules/

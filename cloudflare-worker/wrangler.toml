@@ -1,0 +1,14 @@
+name = "wubi-typing"
+main = "build/worker/shim.mjs"
+compatibility_date = "2024-09-25"
+
+# 静态资源不走assets配置，而是直接嵌入WASM由worker自身服务（/api与SPA路由零冲突）
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wubi-typing"
+# 本地开发用local-only即可；部署时替换为 `wrangler d1 create wubi-typing` 输出的database_id
+database_id = "local-only"
+
+[vars]
+# JWT_SECRET建议用 `wrangler secret put JWT_SECRET` 设置；此处仅本地开发缺省
